@@ -1,47 +1,52 @@
--- DWS HUB | PREMIUM EDITION
-local LP=game:GetService("Players").LocalPlayer;local RS=game:GetService("RunService");local TS=game:GetService("TweenService");local UI=Instance.new("ScreenGui",game:GetService("CoreGui"));UI.Name="DWSHub"
+-- DWS HUB v4.0 - Premium Dashboard Architecture
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
--- Factory: UI Elements
-local function create(c,p,s,b,t) local o=Instance.new(c,p);o.Size=s;o.BackgroundColor3=b;if t then o.Text=t;o.TextColor3=Color3.new(1,1,1);o.Font=Enum.Font.Gotham;o.TextSize=14 end;return o end
+local UI = Instance.new("ScreenGui", game:GetService("CoreGui"))
+UI.Name = "DWS_Hub_v4"
 
--- Core UI Setup
-local main=create("Frame",UI,UDim2.new(0,400,0,300),Color3.fromRGB(20,20,20));main.Visible=false;Instance.new("UICorner",main)
-local title=create("TextLabel",main,UDim2.new(1,0,0,40),Color3.new(0,0,0,0),"DWS HUB - v3.0");title.TextColor3=Color3.new(0,0.5,1)
-
--- Threat Identifier Logic
-local isThreat=(LP.Name=="city800")
-local av=create("ImageLabel",main,UDim2.new(0,50,0,50),Color3.new(0,0,0,0));av.Image=game:GetService("Players"):GetUserThumbnailAsync(LP.UserId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size420x420);av.Position=UDim2.new(0,10,0,50);Instance.new("UICorner",av).CornerRadius=UDim.new(1,0)
-if isThreat then local th=create("TextLabel",av,UDim2.new(1,0,0,20),Color3.fromRGB(255,0,0),"THREAT");th.Position=UDim2.new(0,0,1,0);th.TextColor3=Color3.new(1,1,1) end
-
--- Cooldown Engines
-local function initVegaX()
-    local instant=function() return RS.Heartbeat:Wait() end
-    hookfunction(wait,instant);hookfunction(task.wait,instant)
-    hookfunction(delay,function(_,f) task.spawn(f) end);hookfunction(spawn,function(f) task.spawn(f) end)
+-- Factory for modern UI elements
+local function create(c,p,props)
+    local obj = Instance.new(c,p)
+    for i,v in pairs(props) do obj[i] = v end
+    return obj
 end
 
--- Key System
-local kf=create("Frame",UI,UDim2.new(0,300,0,150),Color3.fromRGB(20,20,20));local kb=create("TextBox",kf,UDim2.new(0,250,0,40),Color3.fromRGB(40,40,40),"");kb.PlaceholderText="Enter Key...";kb.Position=UDim2.new(0.5,-125,0,50)
-create("TextButton",kf,UDim2.new(0,100,0,40),Color3.fromRGB(0,100,255),"SUBMIT").MouseButton1Click:Connect(function()
-    if kb.Text=="pvpOGS" then 
-        kf.Visible=false;local b=create("Frame",UI,UDim2.new(1,0,1,0),Color3.new(0,0,0));task.wait(0.5)
-        local t=create("TextLabel",b,UDim2.new(1,0,0,50),Color3.new(0,0,0,0),"");t.TextColor3=Color3.new(0,1,0);
-        for i=1,#"hi...clan member your access has-been accepted" do t.Text=string.sub("hi...clan member your access has-been accepted",1,i);task.wait(0.05) end
-        task.wait(1);b:Destroy();main.Visible=true
-    end
+-- Main Dashboard
+local Main = create("Frame", UI, {Size = UDim2.new(0, 700, 0, 450), Position = UDim2.new(0.5, -350, 0.5, -225), BackgroundColor3 = Color3.fromRGB(15,15,15), Visible = true})
+create("UICorner", Main, {CornerRadius = UDim.new(0, 16)})
+create("UIStroke", Main, {Color = Color3.fromRGB(40,40,40), Thickness = 2})
+
+-- Bottom Navigation
+local Nav = create("Frame", Main, {Size = UDim2.new(0, 300, 0, 50), Position = UDim2.new(0.5, -150, 1, -60), BackgroundColor3 = Color3.fromRGB(20,20,20)})
+create("UICorner", Nav, {CornerRadius = UDim.new(0, 12)})
+
+local function createTabBtn(name, icon, pos)
+    local btn = create("TextButton", Nav, {Size = UDim2.new(0, 50, 0, 50), Position = pos, BackgroundTransparency = 1, Text = icon, TextSize = 20, Font = Enum.Font.Code, TextColor3 = Color3.new(1,1,1)})
+    btn.MouseButton1Click:Connect(function() print("Switched to "..name) end)
+end
+
+createTabBtn("Home", "🏠", UDim2.new(0, 20, 0, 0))
+createTabBtn("Combat", "⚔️", UDim2.new(0, 90, 0, 0))
+createTabBtn("Utility", "⚙️", UDim2.new(0, 160, 0, 0))
+createTabBtn("Settings", "🛠️", UDim2.new(0, 230, 0, 0))
+
+-- Example Dashboard Card (The "Server" card style from your image)
+local Card = create("Frame", Main, {Size = UDim2.new(0, 200, 0, 120), Position = UDim2.new(0, 20, 0, 20), BackgroundColor3 = Color3.fromRGB(25,25,25)})
+create("UICorner", Card, {CornerRadius = UDim.new(0, 12)})
+create("TextLabel", Card, {Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Text = "Server Status", TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold})
+
+local PlayersLabel = create("TextLabel", Card, {Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0,0,0,40), BackgroundTransparency = 1, Text = "Players: " .. #Players:GetPlayers(), TextColor3 = Color3.new(0.6,0.6,0.6), Font = Enum.Font.Gotham})
+
+-- Admin Action Cards
+local AdminCard = create("Frame", Main, {Size = UDim2.new(0, 200, 0, 100), Position = UDim2.new(0, 240, 0, 20), BackgroundColor3 = Color3.fromRGB(25,25,25)})
+create("UICorner", AdminCard, {CornerRadius = UDim.new(0, 12)})
+create("TextLabel", AdminCard, {Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Text = "Admin Tools", TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold})
+
+create("TextButton", AdminCard, {Size = UDim2.new(0, 100, 0, 30), Position = UDim2.new(0.5, -50, 0, 40), BackgroundColor3 = Color3.fromRGB(0, 100, 255), Text = "Nameless", TextColor3 = Color3.new(1,1,1)}).MouseButton1Click:Connect(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))()
 end)
 
--- Admin Sections
-local function addAdmin(name, url, color)
-    local p=create("Frame",main,UDim2.new(0,350,0,50),color);create("TextLabel",p,UDim2.new(0,100,1,0),Color3.new(0,0,0,0),name)
-    create("TextButton",p,UDim2.new(0,80,0,30),Color3.new(0,0,0),"EXEC").MouseButton1Click:Connect(function() loadstring(game:HttpGet(url))() end)
-    create("TextButton",p,UDim2.new(0,80,0,30),Color3.new(0,0,0),"COPY").MouseButton1Click:Connect(function() setclipboard(url) end)
-end
-addAdmin("Nameless Admin", "https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source", Color3.fromRGB(0,255,0))
-addAdmin("M7 Admin", "https://mois7.xyz/loader", Color3.fromRGB(128,0,128))
-
--- Skull Minimizer
-local sk=create("TextButton",UI,UDim2.new(0,50,0,50),Color3.new(0,0,0,0),"☠️");sk.Visible=false;sk.MouseButton1Click:Connect(function() main.Visible=true;sk.Visible=false end)
-create("TextButton",main,UDim2.new(0,30,0,30),Color3.fromRGB(255,0,0),"X").MouseButton1Click:Connect(function() main.Visible=false;sk.Visible=true end)
-
-print("⚡ DWS HUB V3.0 LOADED")
+print("⚡ DWS HUB v4.0 - Dashboard Style Loaded")
