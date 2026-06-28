@@ -1,8 +1,4 @@
--- STREAMING_CHUNK: Initializing Core Services and Environment
--- ==============================================================================
--- ⚡ DWS HUB V7 (PREMIUM DASHBOARD EDITION)
--- ==============================================================================
-
+/* STREAMING_CHUNK: Initializing Core Services and Environment */
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -28,7 +24,6 @@ local UI = Instance.new("ScreenGui", CoreGui)
 UI.Name = "DWS_Premium"
 UI.ResetOnSpawn = false
 
--- Helper functions
 local function Create(class, props, parent)
 local obj = Instance.new(class)
 for i, v in pairs(props) do obj[i] = v end
@@ -38,53 +33,43 @@ end
 local function Round(obj, rad) Create("UICorner", {CornerRadius = UDim.new(0, rad)}, obj) end
 local function Stroke(obj, color, thick) Create("UIStroke", {Color = color, Thickness = thick, Transparency = 0.2}, obj) end
 
--- STREAMING_CHUNK: Developing the Floating Minimize System
--- ==============================================================================
-local OpenButton = Create("TextButton", {
-Size = UDim2.new(0, 70, 0, 70),
-Position = UDim2.new(0, 40, 0, 40),
-BackgroundColor3 = Theme.Primary,
-Text = "⚡",
-Font = Enum.Font.GothamBold,
-TextSize = 30,
-TextColor3 = Color3.new(1,1,1),
-Visible = false
-}, UI)
-Round(OpenButton, 35); Stroke(OpenButton, Color3.new(1,1,1), 3)
+/* STREAMING_CHUNK: Constructing Key Verification System */
+local KeyOverlay = Create("Frame", {Size = UDim2.new(1,0,1,0), BackgroundColor3 = Theme.Bg, ZIndex = 10}, UI)
+local KeyCard = Create("Frame", {Size = UDim2.new(0, 400, 0, 250), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Theme.Card}, KeyOverlay)
+Round(KeyCard, 12); Stroke(KeyCard, Theme.Primary, 2)
+Create("TextLabel", {Size = UDim2.new(1,0,0,50), BackgroundTransparency = 1, Text = "Junkie Key System", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 20, Parent = KeyCard})
+local KeyInput = Create("TextBox", {Size = UDim2.new(0.8,0,0,40), Position = UDim2.new(0.1, 0, 0.4, 0), BackgroundColor3 = Theme.Bg, PlaceholderText = "Enter verification key", TextColor3 = Theme.Text, Font = Enum.Font.Gotham, Parent = KeyCard})
+Round(KeyInput, 6)
+local VerifyBtn = Create("TextButton", {Size = UDim2.new(0.8,0,0,40), Position = UDim2.new(0.1, 0, 0.7, 0), BackgroundColor3 = Theme.Success, Text = "Verify Key", TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, Parent = KeyCard})
+Round(VerifyBtn, 6)
 
--- STREAMING_CHUNK: Constructing the Main Hub Architecture
--- ==============================================================================
-local MainHub = Create("Frame", {
-Size = UDim2.new(0, 800, 0, 500),
-AnchorPoint = Vector2.new(0.5,0.5),
-Position = UDim2.new(0.5, 0, 0.5, 0),
-BackgroundColor3 = Theme.Bg,
-Active = true,
-Draggable = true
-}, UI)
+/* STREAMING_CHUNK: Constructing Main Dashboard Architecture */
+local MainHub = Create("Frame", {Size = UDim2.new(0, 800, 0, 500), AnchorPoint = Vector2.new(0.5,0.5), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Bg, Active = true, Draggable = true, Visible = false}, UI)
 Round(MainHub, 16); Stroke(MainHub, Theme.ToggleOff, 2)
 
-local MinimizeBtn = Create("TextButton", {
-Size = UDim2.new(0, 60, 0, 60),
-Position = UDim2.new(1, -70, 0, 10),
-BackgroundColor3 = Theme.Danger,
-Text = "-",
-TextColor3 = Color3.new(1,1,1),
-Font = Enum.Font.GothamBold,
-TextSize = 30
-}, MainHub)
-Round(MinimizeBtn, 30)
+local OpenButton = Create("TextButton", {Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0, 20, 0, 20), BackgroundColor3 = Theme.Primary, Text = "⚡", Font = Enum.Font.GothamBold, TextSize = 30, TextColor3 = Color3.new(1,1,1), Visible = false}, UI)
+Round(OpenButton, 30); Stroke(OpenButton, Color3.new(1,1,1), 3)
+
+local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(1, -50, 0, 10), BackgroundColor3 = Theme.Danger, Text = "-", TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 24, Parent = MainHub})
+Round(MinimizeBtn, 20)
 MinimizeBtn.MouseButton1Click:Connect(function() MainHub.Visible = false; OpenButton.Visible = true end)
 OpenButton.MouseButton1Click:Connect(function() MainHub.Visible = true; OpenButton.Visible = false end)
 
--- STREAMING_CHUNK: Setting up Navigation and Tab System
--- ==============================================================================
-local Dock = Create("Frame", {Size = UDim2.new(0, 500, 0, 70), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -20), BackgroundColor3 = Theme.Card}, MainHub)
+/* STREAMING_CHUNK: Implementing Avatar and Threat Logic */
+local AvatarCard = Create("Frame", {Size = UDim2.new(0, 250, 0, 100), Position = UDim2.new(0.05, 0, 0.1, 0), BackgroundColor3 = Theme.Card, Parent = MainHub})
+Round(AvatarCard, 12)
+Create("TextLabel", {Size = UDim2.new(1, 0, 0.5, 0), Text = LocalPlayer.Name, TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, BackgroundTransparency = 1, Parent = AvatarCard})
+if LocalPlayer.Name == "city800" then
+Create("TextLabel", {Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0, 0, 0.5, 0), Text = "THREAT LEVEL: CRITICAL", TextColor3 = Theme.Danger, Font = Enum.Font.GothamBold, BackgroundTransparency = 1, Parent = AvatarCard})
+end
+
+/* STREAMING_CHUNK: Configuring Tabs and Navigation */
+local Dock = Create("Frame", {Size = UDim2.new(0, 600, 0, 70), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -20), BackgroundColor3 = Theme.Card}, MainHub)
 Round(Dock, 35); Stroke(Dock, Theme.ToggleOff, 1)
 
 local Tabs = {}
 local function CreateTab(name, index)
-local btn = Create("TextButton", {Size = UDim2.new(0, 90, 0, 50), Position = UDim2.new(0.02 + (index * 0.195), 0, 0.5, -25), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.Muted, Font = Enum.Font.GothamBold}, Dock)
+local btn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 50), Position = UDim2.new(0.02 + (index * 0.19), 0, 0.5, -25), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.Muted, Font = Enum.Font.GothamBold}, Dock)
 local page = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -120), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 4}, MainHub)
 Create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder}, page)
 Tabs[name] = {Page = page, Btn = btn}
@@ -101,17 +86,13 @@ local UtilityTab = CreateTab("Utility", 2)
 local AdminTab = CreateTab("Admin", 3)
 local VegaTab = CreateTab("Vega", 4)
 
--- STREAMING_CHUNK: Home Tab Logic (Runtime Tracker)
--- ==============================================================================
-local RuntimeLabel = Create("TextLabel", {Size = UDim2.new(1,0,0,50), BackgroundTransparency = 1, Text = "Runtime: 00:00:00", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 20}, HomeTab)
+/* STREAMING_CHUNK: Setting up Runtime Tracker and Toggle Logic */
+local RuntimeLabel = Create("TextLabel", {Size = UDim2.new(1,0,0,50), BackgroundTransparency = 1, Text = "Runtime: 00:00:00", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 20, Parent = HomeTab})
 RunService.Heartbeat:Connect(function()
 local diff = os.time() - startTime
 RuntimeLabel.Text = string.format("Runtime: %02d:%02d:%02d", math.floor(diff/3600), math.floor((diff%3600)/60), diff%60)
 end)
 
--- STREAMING_CHUNK: Persistent Hitbox with 3D Outline
--- ==============================================================================
-local HitboxEnabled = false
 local function CreateToggle(parent, title, callback)
 local Card = Create("Frame", {Size = UDim2.new(1, 0, 0, 50), BackgroundColor3 = Theme.Card}, parent)
 Round(Card, 8)
@@ -130,13 +111,9 @@ callback(state)
 end)
 end
 
-CreateToggle(CombatTab, "Persistent Hitbox (3D Outline)", function(s)
-HitboxEnabled = s
-if not s then
-for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("DWS_Highlight") then p.Character.DWS_Highlight:Destroy() end end
-end
-end)
-
+/* STREAMING_CHUNK: Integrating Persistent 3D Hitbox Logic */
+local HitboxEnabled = false
+CreateToggle(CombatTab, "Persistent Hitbox (3D Outline)", function(s) HitboxEnabled = s end)
 RunService.Heartbeat:Connect(function()
 if not HitboxEnabled then return end
 for _, p in pairs(Players:GetPlayers()) do
@@ -144,20 +121,18 @@ if p ~= LocalPlayer and p.Character then
 if not p.Character:FindFirstChild("DWS_Highlight") then
 local h = Instance.new("Highlight", p.Character)
 h.Name = "DWS_Highlight"
-h.FillColor = Color3.fromRGB(45, 120, 255); h.FillTransparency = 0.5; h.OutlineColor = Color3.new(0,0,0); h.OutlineTransparency = 0
+h.FillColor = Theme.Primary; h.FillTransparency = 0.5; h.OutlineColor = Color3.new(0,0,0); h.OutlineTransparency = 0
 end
 end
 end
 end)
 
--- STREAMING_CHUNK: Target Kill Aura with Selection Menu
--- ==============================================================================
+/* STREAMING_CHUNK: Wiring Kill Aura and Tool Grabber */
 local TargetList = {}
 local AuraActive = false
-CreateToggle(CombatTab, "🎯 Target Kill Aura", function(s) AuraActive = s end)
-local AuraMenu = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 0, 150), BackgroundColor3 = Theme.Card, Visible = true}, CombatTab)
+CreateToggle(CombatTab, "🎯 Kill Aura", function(s) AuraActive = s end)
+local AuraMenu = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 0, 150), BackgroundColor3 = Theme.Card, Parent = CombatTab})
 Round(AuraMenu, 8)
-
 local function UpdateAuraMenu()
 AuraMenu:ClearAllChildren()
 for _, p in pairs(Players:GetPlayers()) do
@@ -172,49 +147,17 @@ end
 end
 end
 UpdateAuraMenu()
-Players.PlayerAdded:Connect(UpdateAuraMenu)
-Players.PlayerRemoving:Connect(UpdateAuraMenu)
 
--- STREAMING_CHUNK: Quantum Tool Grabber
--- ==============================================================================
 local QTGActive = false
 local toolList = {"Energy Sword", "Staff", "Axe", "Fist"}
 CreateToggle(UtilityTab, "Quantum Tool Grabber", function(s) QTGActive = s end)
 
-task.spawn(function()
-while true do
-if QTGActive and LocalPlayer.Character then
-for _, d in pairs(workspace:GetDescendants()) do
-if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
-for _, tName in pairs(toolList) do
-if not LocalPlayer.Backpack:FindFirstChild(tName) and not LocalPlayer.Character:FindFirstChild(tName) then
-firetouchinterest(LocalPlayer.Character.HumanoidRootPart, d.Parent, 0)
-firetouchinterest(LocalPlayer.Character.HumanoidRootPart, d.Parent, 1)
-end
-end
-end
-end
-end
-task.wait(1)
-end
+/* STREAMING_CHUNK: Finalizing Module Integration */
+VerifyBtn.MouseButton1Click:Connect(function()
+KeyOverlay:TweenPosition(UDim2.new(0,0,-1,0), "Out", "Quad", 0.5)
+task.wait(0.5)
+KeyOverlay.Visible = false
+MainHub.Visible = true
 end)
 
--- STREAMING_CHUNK: Admin and Vega Integration
--- ==============================================================================
-Create("TextButton", {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Primary, Text = "Execute Nameless Admin", Parent = AdminTab}).MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))() end)
-Create("TextButton", {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Primary, Text = "Execute M7 Admin", Parent = AdminTab}).MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://mois7.xyz/loader"))() end)
-
-CreateToggle(VegaTab, "Vega X: No Cooldown", function(s)
-if s then
-local mt = getrawmetatable(game)
-setreadonly(mt, false)
-local old = mt.__namecall
-mt.__namecall = newcclosure(function(self, ...)
-local args = {...}
-if getnamecallmethod() == "FireServer" and tostring(self) == "Cooldown" then return end
-return old(self, ...)
-end)
-end
-end)
-
-print("⚡ Unified Hub V7 Loaded")
+print("⚡ Unified Hub V7 Fully Loaded")
