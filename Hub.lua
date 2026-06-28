@@ -1,6 +1,7 @@
+-- STREAMING_CHUNK: Initializing Core Services and Variables
 -- ==============================================================================
--- ⚡ DWS HUB V5 (PREMIUM DASHBOARD EDITION)
--- ALL MODULES INTEGRATED | CUSTOM TOGGLES | THREAT DETECTION | KEY SYSTEM
+-- ⚡ DWS HUB V6 (PREMIUM DASHBOARD EDITION)
+-- MINIMIZABLE | TARGET AURA | QUANTUM GRABBER | PERSISTENT HITBOXES
 -- ==============================================================================
 
 local Players = game:GetService("Players")
@@ -9,6 +10,8 @@ local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+
+local startTime = os.time()
 
 -- ==============================================================================
 -- 🎨 THEME & FACTORY ENGINE
@@ -40,27 +43,58 @@ end
 local function Round(obj, rad) Create("UICorner", {CornerRadius = UDim.new(0, rad)}, obj) end
 local function Stroke(obj, color, thick) Create("UIStroke", {Color = color, Thickness = thick, Transparency = 0.2}, obj) end
 
+-- STREAMING_CHUNK: Building the Floating Minimize Button
 -- ==============================================================================
--- 🔐 PROFESSIONAL KEY SYSTEM (Ref: images (4).jpeg)
+-- 🔽 FLOATING OPEN BUTTON (Visible when minimized)
+-- ==============================================================================
+local OpenButton = Create("TextButton", {
+Size = UDim2.new(0, 50, 0, 50),
+Position = UDim2.new(0, 20, 0, 20),
+BackgroundColor3 = Theme.Primary,
+TextColor3 = Color3.new(1,1,1),
+Text = "⚡",
+Font = Enum.Font.GothamBold,
+TextSize = 24,
+Visible = false
+}, UI)
+Round(OpenButton, 25); Stroke(OpenButton, Color3.new(1,1,1), 1)
+
+-- STREAMING_CHUNK: Building the Key System overlay
+-- ==============================================================================
+-- 🔐 PROFESSIONAL KEY SYSTEM
 -- ==============================================================================
 local KeyOverlay = Create("Frame", {Size = UDim2.new(1,0,1,0), BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.2}, UI)
 local KeyCard = Create("Frame", {Size = UDim2.new(0, 450, 0, 260), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Card}, KeyOverlay)
 Round(KeyCard, 12); Stroke(KeyCard, Theme.Primary, 1)
 
-Create("TextLabel", {Size = UDim2.new(1,0,0,60), Text = "🛡️ Key Verification System", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 18, BackgroundTransparency = 1}, KeyCard)
-local KeyInput = Create("TextBox", {Size = UDim2.new(0.9, 0, 0, 45), Position = UDim2.new(0.05, 0, 0.35, 0), BackgroundColor3 = Theme.Bg, TextColor3 = Theme.Text, PlaceholderText = "Enter your verification key...", Font = Enum.Font.Gotham, TextSize = 14}, KeyCard)
+local ShieldIcon = Create("ImageLabel", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0.5, -20, 0, 20), BackgroundTransparency = 1, Image = "rbxassetid://3926305014", ImageColor3 = Theme.Primary}, KeyCard)
+Create("TextLabel", {Size = UDim2.new(1,0,0,30), Position = UDim2.new(0, 0, 0, 70), Text = "Key Verification System", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 18, BackgroundTransparency = 1}, KeyCard)
+local KeyInput = Create("TextBox", {Size = UDim2.new(0.9, 0, 0, 45), Position = UDim2.new(0.05, 0, 0.45, 0), BackgroundColor3 = Theme.Bg, TextColor3 = Theme.Text, PlaceholderText = "Enter your verification key...", Font = Enum.Font.Gotham, TextSize = 14}, KeyCard)
 Round(KeyInput, 8); Stroke(KeyInput, Theme.Muted, 1)
 
-local GetLinkBtn = Create("TextButton", {Size = UDim2.new(0.43, 0, 0, 45), Position = UDim2.new(0.05, 0, 0.65, 0), BackgroundColor3 = Theme.Primary, TextColor3 = Color3.new(1,1,1), Text = "🔗 Get Link", Font = Enum.Font.GothamBold, TextSize = 14}, KeyCard)
+local GetLinkBtn = Create("TextButton", {Size = UDim2.new(0.43, 0, 0, 45), Position = UDim2.new(0.05, 0, 0.75, 0), BackgroundColor3 = Theme.Primary, TextColor3 = Color3.new(1,1,1), Text = "🔗 Get Link", Font = Enum.Font.GothamBold, TextSize = 14}, KeyCard)
 Round(GetLinkBtn, 8)
-local VerifyBtn = Create("TextButton", {Size = UDim2.new(0.43, 0, 0, 45), Position = UDim2.new(0.52, 0, 0.65, 0), BackgroundColor3 = Theme.Success, TextColor3 = Color3.new(1,1,1), Text = "✔️ Verify Key", Font = Enum.Font.GothamBold, TextSize = 14}, KeyCard)
+local VerifyBtn = Create("TextButton", {Size = UDim2.new(0.43, 0, 0, 45), Position = UDim2.new(0.52, 0, 0.75, 0), BackgroundColor3 = Theme.Success, TextColor3 = Color3.new(1,1,1), Text = "✔️ Verify Key", Font = Enum.Font.GothamBold, TextSize = 14}, KeyCard)
 Round(VerifyBtn, 8)
 
+-- STREAMING_CHUNK: Constructing the Main Dashboard and Drag Logic
 -- ==============================================================================
--- 💻 DASHBOARD UI (Ref: b6d4f9a449bd4a36003ac5c757d4a8aa976dd3b5_2.jpeg)
+-- 💻 DASHBOARD UI
 -- ==============================================================================
 local MainHub = Create("Frame", {Size = UDim2.new(0, 800, 0, 500), AnchorPoint = Vector2.new(0.5,0.5), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Theme.Bg, Visible = false}, UI)
 Round(MainHub, 16); Stroke(MainHub, Theme.ToggleOff, 1)
+
+local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -40, 0, 10), BackgroundTransparency = 1, Text = "-", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 24}, MainHub)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+MainHub.Visible = false
+OpenButton.Visible = true
+end)
+
+OpenButton.MouseButton1Click:Connect(function()
+MainHub.Visible = true
+OpenButton.Visible = false
+end)
 
 -- Cutscene Logic
 VerifyBtn.MouseButton1Click:Connect(function()
@@ -91,39 +125,63 @@ MainHub.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, star
 end
 end)
 
+-- STREAMING_CHUNK: Setting up the Icon-based Navigation Dock
 -- ==============================================================================
--- 🧭 BOTTOM NAVIGATION DOCK
+-- 🧭 BOTTOM NAVIGATION DOCK (WITH ICONS)
 -- ==============================================================================
 local Dock = Create("Frame", {Size = UDim2.new(0, 400, 0, 50), AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -15), BackgroundColor3 = Theme.Card}, MainHub)
 Round(Dock, 25); Stroke(Dock, Theme.ToggleOff, 1)
 
 local Tabs = {}
-local function CreateNavBtn(icon, name, pos)
-local btn = Create("TextButton", {Size = UDim2.new(0, 80, 1, 0), Position = pos, BackgroundTransparency = 1, Text = icon, TextSize = 20, Font = Enum.Font.Gotham}, Dock)
+local function CreateNavBtn(iconId, name, pos)
+local btn = Create("TextButton", {Size = UDim2.new(0, 80, 1, 0), Position = pos, BackgroundTransparency = 1, Text = ""}, Dock)
+local icon = Create("ImageLabel", {Size = UDim2.new(0, 24, 0, 24), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1, Image = iconId, ImageColor3 = Theme.Muted}, btn)
+
 local page = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -90), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 4}, MainHub)
 Create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder}, page)
-Tabs[name] = page
+Tabs[name] = {Page = page, Icon = icon}
+
 btn.MouseButton1Click:Connect(function()
-for _, t in pairs(Tabs) do t.Visible = false end
-page.Visible = true
+	for _, t in pairs(Tabs) do 
+		t.Page.Visible = false
+		TweenService:Create(t.Icon, TweenInfo.new(0.2), {ImageColor3 = Theme.Muted}):Play()
+	end
+	page.Visible = true
+	TweenService:Create(icon, TweenInfo.new(0.2), {ImageColor3 = Theme.Primary}):Play()
 end)
 return page
+
+
 end
 
-local HomeTab = CreateNavBtn("🏠", "Home", UDim2.new(0, 0, 0, 0))
-local CombatTab = CreateNavBtn("⚔️", "Combat", UDim2.new(0.2, 0, 0, 0))
-local UtilityTab = CreateNavBtn("⚙️", "Utility", UDim2.new(0.4, 0, 0, 0))
-local AdminTab = CreateNavBtn("🛡️", "Admins", UDim2.new(0.6, 0, 0, 0))
-local VegaTab = CreateNavBtn("⚡", "VegaX", UDim2.new(0.8, 0, 0, 0))
-HomeTab.Visible = true
+-- Using Standard UI Asset IDs for Icons
+local HomeTab = CreateNavBtn("rbxassetid://3926305904", "Home", UDim2.new(0, 0, 0, 0))
+local CombatTab = CreateNavBtn("rbxassetid://7733674079", "Combat", UDim2.new(0.2, 0, 0, 0))
+local UtilityTab = CreateNavBtn("rbxassetid://3926307971", "Utility", UDim2.new(0.4, 0, 0, 0))
+local AdminTab = CreateNavBtn("rbxassetid://3926305014", "Admins", UDim2.new(0.6, 0, 0, 0))
+local VegaTab = CreateNavBtn("rbxassetid://3926305655", "VegaX", UDim2.new(0.8, 0, 0, 0))
 
+HomeTab.Visible = true
+Tabs["Home"].Icon.ImageColor3 = Theme.Primary
+
+-- STREAMING_CHUNK: Developing the Home Tab and Runtime Tracker
 -- ==============================================================================
--- 🏠 HOME TAB (AVATAR & SERVER)
+-- 🏠 HOME TAB (AVATAR, SERVER & RUNTIME)
 -- ==============================================================================
-local ServerCard = Create("Frame", {Size = UDim2.new(0, 300, 0, 120), BackgroundColor3 = Theme.Card}, HomeTab)
+local ServerCard = Create("Frame", {Size = UDim2.new(0, 300, 0, 150), BackgroundColor3 = Theme.Card}, HomeTab)
 Round(ServerCard, 12); Stroke(ServerCard, Theme.Primary, 1)
-Create("TextLabel", {Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 10), BackgroundTransparency = 1, Text = "Server Status", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left}, ServerCard)
+Create("TextLabel", {Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 10), BackgroundTransparency = 1, Text = "Session Details", TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left}, ServerCard)
 Create("TextLabel", {Size = UDim2.new(1, -20, 0, 20), Position = UDim2.new(0, 10, 0, 45), BackgroundTransparency = 1, Text = "Players: " .. #Players:GetPlayers(), TextColor3 = Theme.Muted, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left}, ServerCard)
+
+local RuntimeLabel = Create("TextLabel", {Size = UDim2.new(1, -20, 0, 20), Position = UDim2.new(0, 10, 0, 75), BackgroundTransparency = 1, Text = "Runtime: 00:00:00", TextColor3 = Theme.Muted, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left}, ServerCard)
+
+RunService.Heartbeat:Connect(function()
+local diff = os.time() - startTime
+local h = math.floor(diff / 3600)
+local m = math.floor((diff % 3600) / 60)
+local s = diff % 60
+RuntimeLabel.Text = string.format("Runtime: %02d:%02d:%02d", h, m, s)
+end)
 
 local UserCard = Create("Frame", {Size = UDim2.new(0, 300, 0, 100), BackgroundColor3 = Theme.Card}, HomeTab)
 Round(UserCard, 12)
@@ -137,6 +195,7 @@ local ThreatBadge = Create("TextLabel", {Size = UDim2.new(0, 80, 0, 20), Positio
 Round(ThreatBadge, 4); Stroke(ThreatBadge, Theme.Danger, 1)
 end
 
+-- STREAMING_CHUNK: Generating Toggle Switch Elements
 -- ==============================================================================
 -- 🔘 CIRCULAR TOGGLE BUILDER
 -- ==============================================================================
@@ -163,92 +222,183 @@ end)
 
 end
 
+-- STREAMING_CHUNK: Implementing Combat Scripts (Hitbox Fix & Target Aura)
 -- ==============================================================================
--- ⚙️ SCRIPT LOGIC MAPPING
+-- ⚔️ COMBAT TAB LOGIC
 -- ==============================================================================
 
--- ⚔️ COMBAT TAB
+-- 1. Persistent Hitbox Expander (Fixed to stay on after respawn)
 local HitboxEnabled = false
-CreateToggle(CombatTab, "Hitbox Expander", function(state)
+CreateToggle(CombatTab, "Hitbox Expander (Persistent)", function(state)
 HitboxEnabled = state
+if not state then
+-- Revert all sizes when turned off
 for _, p in ipairs(Players:GetPlayers()) do
 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 local hrp = p.Character.HumanoidRootPart
-if state then
-hrp.Size = Vector3.new(10, 10, 10); hrp.Transparency = 0.8; hrp.BrickColor = BrickColor.new("Royal blue"); hrp.CanCollide = false
-else
-hrp.Size = Vector3.new(2, 2, 1); hrp.Transparency = 1
+hrp.Size = Vector3.new(2, 2, 1)
+hrp.Transparency = 1
 end
 end
 end
 end)
 
-local HitAmpActive = false
-CreateToggle(CombatTab, "Hit Amplifier", function(state) HitAmpActive = state end)
-local ampParams = OverlapParams.new(); ampParams.FilterType = Enum.RaycastFilterType.Blacklist
 RunService.Heartbeat:Connect(function()
-if not HitAmpActive or not LocalPlayer.Character then return end
-local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if hrp then
-ampParams.FilterDescendantsInstances = {LocalPlayer.Character}
-local parts = workspace:GetPartBoundsInBox(CFrame.new(hrp.Position), Vector3.new(28,28,28), ampParams)
-for _, part in ipairs(parts) do
-if part.Parent:FindFirstChildOfClass("Humanoid") then
-for _, t in ipairs(LocalPlayer.Character:GetChildren()) do
-if t:IsA("Tool") then pcall(t.Activate, t) end
-end
-break
-end
-end
-end
-end)
-
-local AuraActive = false
-CreateToggle(CombatTab, "Kill Aura", function(state) AuraActive = state end)
-RunService.Heartbeat:Connect(function()
-if not AuraActive or not LocalPlayer.Character then return end
-local myHRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if not myHRP then return end
+if not HitboxEnabled then return end
 for _, p in ipairs(Players:GetPlayers()) do
 if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-if (p.Character.HumanoidRootPart.Position - myHRP.Position).Magnitude <= 35 then
-for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
-if tool:IsA("Tool") then
-local touch = tool:FindFirstChildWhichIsA("TouchTransmitter", true)
-if touch and touch.Parent then
-firetouchinterest(touch.Parent, p.Character.HumanoidRootPart, 0)
-firetouchinterest(touch.Parent, p.Character.HumanoidRootPart, 1)
-end
-end
-end
-end
+local hrp = p.Character.HumanoidRootPart
+hrp.Size = Vector3.new(10, 10, 10)
+hrp.Transparency = 0.8
+hrp.BrickColor = BrickColor.new("Royal blue")
+hrp.CanCollide = false
 end
 end
 end)
 
+-- 2. Target Kill Aura Logic
+local TargetList = {}
+local AuraActive = false
+local Ignorelist = OverlapParams.new()
+Ignorelist.FilterType = Enum.RaycastFilterType.Include
+
+local AuraContainer = Create("Frame", {Size = UDim2.new(1, 0, 0, 200), BackgroundColor3 = Theme.Bg, BackgroundTransparency = 1}, CombatTab)
+Create("UIListLayout", {Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder}, AuraContainer)
+
+CreateToggle(AuraContainer, "🎯 Target Kill Aura", function(state) AuraActive = state end)
+
+local PlayerScroll = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 0, 130), BackgroundColor3 = Theme.Card, ScrollBarThickness = 4}, AuraContainer)
+Round(PlayerScroll, 8); Stroke(PlayerScroll, Theme.Primary, 1)
+Create("UIListLayout", {Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder}, PlayerScroll)
+
+local function UpdatePlayerList()
+for _, c in ipairs(PlayerScroll:GetChildren()) do
+if c:IsA("TextButton") then c:Destroy() end
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+	if p ~= LocalPlayer then
+		local btn = Create("TextButton", {Size = UDim2.new(1, -10, 0, 30), BackgroundColor3 = Theme.Bg, TextColor3 = Theme.Text, Text = p.Name, Font = Enum.Font.Gotham}, PlayerScroll)
+		Round(btn, 6); Stroke(btn, Theme.Muted, 1)
+		
+		local isTarget = table.find(TargetList, p)
+		if isTarget then btn.BackgroundColor3 = Theme.Primary end
+		
+		btn.MouseButton1Click:Connect(function()
+			local idx = table.find(TargetList, p)
+			if idx then
+				table.remove(TargetList, idx)
+				btn.BackgroundColor3 = Theme.Bg
+			else
+				table.insert(TargetList, p)
+				btn.BackgroundColor3 = Theme.Primary
+			end
+		end)
+	end
+end
+
+
+end
+UpdatePlayerList()
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoving:Connect(UpdatePlayerList)
+
+-- Aura Heartbeat & Rendering
+local function GetTouchInterest(tool)
+for _, obj in ipairs(tool:GetDescendants()) do
+if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then return obj.Parent end
+end
+end
+
+RunService.Heartbeat:Connect(function()
+if not AuraActive or #TargetList == 0 or not LocalPlayer.Character then return end
+local char = LocalPlayer.Character
+
+local validChars = {}
+for _, p in ipairs(TargetList) do if p.Character then table.insert(validChars, p.Character) end end
+Ignorelist.FilterDescendantsInstances = validChars
+
+for _, tool in ipairs(char:GetChildren()) do
+	if tool:IsA("Tool") then
+		local touch = GetTouchInterest(tool)
+		if touch then
+			local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + Vector3.new(30,30,30), Ignorelist)
+			for _, p in ipairs(parts) do
+				if p.Parent:FindFirstChild("Humanoid") then
+					firetouchinterest(touch, p, 1)
+					firetouchinterest(touch, p, 0)
+				end
+			end
+		end
+	end
+end
+
+
+end)
+
+-- STREAMING_CHUNK: Implementing Quantum Utility Scripts
+-- ==============================================================================
 -- 🛠️ UTILITY TAB
-local ToolGrabberActive = false
-CreateToggle(UtilityTab, "Instant Tool Grabber", function(state) ToolGrabberActive = state end)
-RunService.Heartbeat:Connect(function()
-if not ToolGrabberActive or not LocalPlayer.Character then return end
-local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if not root then return end
-for _, d in ipairs(workspace:GetDescendants()) do
-if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver") then
-if (d.Parent.Position - root.Position).Magnitude < 1000 then
-firetouchinterest(root, d.Parent, 0)
-firetouchinterest(root, d.Parent, 1)
+-- ==============================================================================
+
+-- Quantum Instant Parallel Tool Grabber (Specific 4 Weapons)
+local QTGActive = false
+local QTG_Loops = {}
+local toolToBase = {["Energy Sword"] = "Stone", ["Staff"] = "Magic", ["Axe"] = "Storm", ["Fist"] = "Robotic"}
+
+local function hasTool(toolName)
+local function scan(c)
+if not c then return false end
+for _,t in ipairs(c:GetChildren()) do if t:IsA("Tool") and t.Name == toolName then return true end end
 end
+return scan(LocalPlayer.Backpack) or scan(LocalPlayer.Character)
 end
+
+local function startToolLoop(toolName)
+if QTG_Loops[toolName] then return end
+QTG_Loops[toolName] = true
+task.spawn(function()
+while QTG_Loops[toolName] and QTGActive do
+if hasTool(toolName) then QTG_Loops[toolName] = nil break end
+
+		local char = LocalPlayer.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if root then
+			for _, d in ipairs(workspace:GetDescendants()) do
+				if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
+					local baseName = d.Parent.Parent.Parent and d.Parent.Parent.Parent.Name
+					if baseName == toolToBase[toolName] then
+						if (d.Parent.Position - root.Position).Magnitude < 1000 then
+							for i = 1, 8 do
+								firetouchinterest(root, d.Parent, 0)
+								firetouchinterest(root, d.Parent, 1)
+							end
+						end
+					end
+				end
+			end
+		end
+		task.wait()
+	end
+end)
+
+
+end
+
+CreateToggle(UtilityTab, "Quantum Tool Grabber", function(state)
+QTGActive = state
+if state then
+for toolName in pairs(toolToBase) do startToolLoop(toolName) end
+else
+for k, _ in pairs(QTG_Loops) do QTG_Loops[k] = false end
 end
 end)
 
-local UseToolsActive = false
-CreateToggle(UtilityTab, "Use Tools (Auto-Equip/Use)", function(state) UseToolsActive = state end)
-RunService.Heartbeat:Connect(function()
-if not UseToolsActive or not LocalPlayer.Character then return end
-for _, t in ipairs(LocalPlayer.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = LocalPlayer.Character end end
-for _, t in ipairs(LocalPlayer.Character:GetChildren()) do if t:IsA("Tool") then pcall(t.Activate, t) end end
+-- Re-trigger Grabber on Respawn if enabled
+LocalPlayer.CharacterAdded:Connect(function()
+if QTGActive then
+for toolName in pairs(toolToBase) do startToolLoop(toolName) end
+end
 end)
 
 local RespawnActive = false
@@ -265,7 +415,10 @@ end
 elseif diedConn then diedConn:Disconnect() end
 end)
 
+-- STREAMING_CHUNK: Setting up Admin and Engine Modules
+-- ==============================================================================
 -- 🛡️ ADMINS TAB
+-- ==============================================================================
 local function CreateButton(parent, text, callback)
 local Card = Create("Frame", {Size = UDim2.new(1, 0, 0, 50), BackgroundColor3 = Theme.Card}, parent)
 Round(Card, 8)
@@ -281,18 +434,4 @@ CreateButton(AdminTab, "Execute M7 Admin", function()
 loadstring(game:HttpGet("https://mois7.xyz/loader"))()
 end)
 
--- ⚡ VEGA X TAB (NO COOLDOWN ENGINE)
-local CooldownBypassed = false
-CreateToggle(VegaTab, "Vega X: No Cooldown Engine", function(state)
-if state and not CooldownBypassed then
-CooldownBypassed = true
-local instant = function() return RunService.PostSimulation:Wait() end
-hookfunction(wait, instant)
-hookfunction(task.wait, instant)
-hookfunction(delay, function(_,f) task.spawn(f) end)
-hookfunction(spawn, function(f) task.spawn(f) end)
-print("⚡ Vega X No Cooldown Enabled")
-end
-end)
-
-print("⚡ DWS HUB V5 Loaded Successfully")
+-- ===========
