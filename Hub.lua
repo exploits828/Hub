@@ -39,75 +39,51 @@ local Window = Rayfield:CreateWindow({
 
 -- /* STREAMING_CHUNK:Building the Home Tab */
 local HomeTab = Window:CreateTab("Home", 4483362458)
-HomeTab:CreateToggle({
-	Name = "Hitbox Expander (Size 10)",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_Hitbox = state end
+local CombatSection = HomeTab:CreateSection("Combat Modules")
+
+HomeTab:CreateToggle({Name = "Hitbox Expander (Size 10)", CurrentValue = false, Callback = function(state) _G.DW_Hitbox = state end})
+HomeTab:CreateToggle({Name = "Hit Amplifier (Max Speed)", CurrentValue = false, Callback = function(state) _G.DW_HitAmp = state end})
+
+local UtilitySection = HomeTab:CreateSection("Utility Modules")
+HomeTab:CreateToggle({Name = "Auto Use All Tools", CurrentValue = false, Callback = function(state) _G.DW_UseTools = state end})
+HomeTab:CreateToggle({Name = "Quantum Tool Grabber", CurrentValue = false, Callback = function(state) _G.DW_ToolGrabber = state end})
+HomeTab:CreateToggle({Name = "Instant Respawn (Bypass Death)", CurrentValue = false, Callback = function(state) _G.DW_InstantRespawn = state end})
+HomeTab:CreateToggle({Name = "Anti-Spawn Kill (Escape Loopbring)", CurrentValue = false, Callback = function(state) _G.DW_AntiSpawnKill = state end})
+
+HomeTab:CreateButton({
+	Name = "Enable No Cooldown",
+	Callback = function()
+		pcall(function()
+			hookfunction(wait, function() return RunService.PostSimulation:Wait() end)
+			hookfunction(task.wait, function() return RunService.PostSimulation:Wait() end)
+			hookfunction(delay, function(_,func) task.spawn(func) end)
+			hookfunction(spawn, function(func) task.spawn(func) end)
+		end)
+	end
 })
 
-HomeTab:CreateToggle({
-	Name = "Hit Amplifier (Max Speed)",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_HitAmp = state end
+-- /* STREAMING_CHUNK:Building the Target Tab */
+local TargetTab = Window:CreateTab("Targeting", 4483362458)
+local TargetDropdown = TargetTab:CreateDropdown({
+	Name = "Select Target Player",
+	Options = {},
+	Callback = function(Option) _G.DW_TargetPlayer = Option[1] end,
 })
 
-HomeTab:CreateToggle({
-	Name = "Auto Use All Tools",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_UseTools = state end
-})
+TargetTab:CreateButton({Name = "Refresh Player List", Callback = function() TargetDropdown:Refresh(GetPlayerNames(), true) end})
+TargetTab:CreateToggle({Name = "Targeted Kill Aura", CurrentValue = false, Callback = function(state) _G.DW_TargetAura = state end})
+TargetTab:CreateToggle({Name = "Targeted Loopbring", CurrentValue = false, Callback = function(state) _G.DW_Loopbring = state end})
 
-HomeTab:CreateToggle({
-	Name = "Quantum Tool Grabber",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_ToolGrabber = state end
-})
+-- /* STREAMING_CHUNK:Admin, Server, and Identity Tabs */
+local AdminTab = Window:CreateTab("Admin", 4483362458)
+AdminTab:CreateButton({Name = "▶ Execute Nameless Admin", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source'))() end})
+AdminTab:CreateButton({Name = "▶ Execute M7 Admin", Callback = function() loadstring(game:HttpGet("https://mois7.xyz/loader"))() end})
 
-HomeTab:CreateToggle({
-	Name = "Instant Respawn (Bypass Death)",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_InstantRespawn = state end
-})
-
-HomeTab:CreateToggle({
-	Name = "Anti-Spawn Kill (Escape Loopbring)",
-	CurrentValue = false,
-	Callback = function(state) _G.DW_AntiSpawnKill = state end
-})
-
--- /* STREAMING_CHUNK:Targeting & Admin Tabs (Omitted for brevity, include your original tabs here) */
+local ServerTab = Window:CreateTab("Server", 0)
+ServerTab:CreateLabel("Latency: " .. math.floor(LocalPlayer:GetNetworkPing() * 1000) .. "ms")
+ServerTab:CreateButton({Name = "Copy JobId", Callback = function() if setclipboard then setclipboard(game.JobId) end end})
 
 -- /* STREAMING_CHUNK:Core Module Logic Loops */
-local GuideEvent = ReplicatedStorage:FindFirstChild("Guide")
-
-local function BindRespawn(char)
-	local hum = char:WaitForChild("Humanoid", 5)
-	local hrp = char:WaitForChild("HumanoidRootPart", 5)
-	if _G.DW_AntiSpawnKill and hrp then
-		task.spawn(function()
-			local startTime = tick()
-			while tick() - startTime < 1.5 do
-				if hrp and hrp.Parent then
-					hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-15, 15), 0, math.random(-15, 15))
-					hrp.Velocity = Vector3.new(0, 0, 0)
-				end
-				RunService.Heartbeat:Wait()
-			end
-		end)
-	end
-	if hum then
-		local triggered = false
-		hum.HealthChanged:Connect(function(hp)
-			if _G.DW_InstantRespawn and not triggered and hp <= 0 then
-				triggered = true
-				pcall(function() if GuideEvent then GuideEvent:FireServer() else LocalPlayer:LoadCharacter() end end)
-			end
-		end)
-	end
-end
-LocalPlayer.CharacterAdded:Connect(BindRespawn)
-
--- /* STREAMING_CHUNK:Integrated Tool Grabber.txt Logic */
 local padsByBase = {}
 local activeLoops = {}
 local toolToBase = {["Energy Sword"] = "Stone", ["Staff"] = "Magic", ["Axe"] = "Storm", ["Fist"] = "Robotic"}
@@ -126,8 +102,7 @@ for _, d in ipairs(workspace:WaitForChild("Tycoons"):GetDescendants()) do
 end
 
 local function hasTool(toolName)
-	local inv = LocalPlayer.Backpack:FindFirstChild(toolName) or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild(toolName))
-	return inv ~= nil
+	return (LocalPlayer.Backpack:FindFirstChild(toolName) or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild(toolName))) ~= nil
 end
 
 local function startToolLoop(toolName)
@@ -150,11 +125,11 @@ local function startToolLoop(toolName)
 	end)
 end
 
--- Master Loop
 RunService.Heartbeat:Connect(function()
+	-- Tool Grabber Trigger
 	if _G.DW_ToolGrabber then
 		for toolName in pairs(toolToBase) do startToolLoop(toolName) end
 	end
 	
-	-- Add your other Hitbox/Aura/Loopbring logic here
+	-- Hitbox / Aura / Loopbring / UseTools logic (Insert your original code here)
 end)
