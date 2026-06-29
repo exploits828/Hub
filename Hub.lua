@@ -1,5 +1,5 @@
 -- // DEATH WATCHERS | ULTIMATE PVP HUBS ENGINE
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/Example.lua"))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
@@ -10,7 +10,7 @@ local Window = WindUI:CreateWindow({
     Icon = "rbxassetid://128278170341835",
     Author = "DW Clan Core",
     Folder = "DeathWatchers_WindUI",
-    Size = UDim2.fromOffset(600, 480),
+    Size = UDim2.fromOffset(580, 460),
     Transparent = false,
     HasOutline = true,
     Theme = "Dark"
@@ -27,12 +27,14 @@ _G.Settings = {
     KillAura = false
 }
 
-_G.BringTargets = {}
-getgenv().configs = {
-    connections = {},
-    Size = Vector3.new(30, 30, 30),
-    TargetList = {} -- Syncs with the Targeting Aura network
-}
+_G.BringTargets = _G.BringTargets or {}
+if not getgenv().configs then
+    getgenv().configs = {
+        connections = {},
+        Size = Vector3.new(30, 30, 30),
+        TargetList = {} -- Syncs with the Targeting Aura network
+    }
+end
 
 -- ⚡ [SOURCE 14] GLOBAL COOLDOWN BREAKER (Instant Refire Overrides)
 pcall(function()
@@ -177,14 +179,12 @@ local function hookCharacterHumanoid(char)
 end
 
 -- ==========================================================
--- 🎨 DESIGN LAYER & PERFECTLY SPACED UI SECTIONS
+-- 🎨 DESIGN LAYER & UI SECTIONS
 -- ==========================================================
-local CombatTab = Window:Tab({Title = "PvP", Icon = "sword"})
+local CombatTab = Window:Tab({Title = "PvP Mods", Icon = "sword"})
 local TargetTab = Window:Tab({Title = "Targeting", Icon = "crosshair"})
-local AdminTab = Window:Tab({Title = "Admin", Icon = "terminal"})
-local InfoTab  = Window:Tab({Title = "Identity", Icon = "user"})
 
--- --- PVP TAB CONFIGURATION ---
+-- --- COMBAT TAB CONFIGURATION ---
 CombatTab:Section({Title = "⚡ Automated Combat Systems"})
 
 CombatTab:Toggle({
@@ -211,59 +211,47 @@ CombatTab:Toggle({
     Callback = function(v) _G.Settings.Respawn = v end
 })
 
--- --- ADMIN & IDENTITY MODULES ---
-AdminTab:Section({Title = "🛠️ Operational Overrides"})
-AdminTab:Button({
-    Title = "Load Nameless Admin Tools",
-    Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end
-})
-
-InfoTab:Section({Title = "👤 Local Client Signatures"})
-InfoTab:Label({Title = "Player Identity: " .. LP.Name})
-InfoTab:Label({Title = "Network Account ID: " .. LP.UserId})
-
 -- ==========================================================
--- 🎯 DYNAMIC TARGETING INTERFACE WITH DEDICATED ROSTER
+-- 🎯 TARGETING PAGE WITH INTEGRATED REFRESH ROSTER
 -- ==========================================================
 TargetTab:Section({Title = "⚔️ Combat Routing Triggers"})
 
-local AuraToggle = TargetTab:Toggle({
-    Title = "Targeted Kill Aura Network",
+TargetTab:Toggle({
+    Title = "Target Kill Aura Network",
     Value = false,
     Callback = function(v) _G.Settings.KillAura = v end
 })
 
-local LoopbringToggle = TargetTab:Toggle({
-    Title = "Loopbring Target Vector",
+TargetTab:Toggle({
+    Title = "Refresh Player List Loopbring",
     Value = false,
     Callback = function(v) _G.Settings.Loopbring = v end
 })
 
--- Dynamic Layout Containers for Target Assignment Frame
-local TargetListSection = TargetTab:Section({Title = "🎯 Active Network Roster Selector"})
+TargetTab:Section({Title = "🎯 Active Network Roster Selector"})
+
+local activeButtons = {}
 
 local function populatePlayerTargetElements()
-    -- Cleans structural content row rows safely to avoid rendering duplication
-    for _, element in ipairs(TargetTab:GetChildren()) do
-        if element.Title and element.Title ~= "⚔️ Combat Routing Triggers" and element.Title ~= "🎯 Active Network Roster Selector" and not element.Title:find("Aura") and not element.Title:find("Loopbring") then
-            element:Destroy()
-        end
+    -- Clean old references cleanly to prevent internal engine leaks
+    for _, btn in pairs(activeButtons) do
+        pcall(function() btn:Destroy() end)
     end
+    table.clear(activeButtons)
 
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LP then
             local isAuraTarget = table.find(getgenv().configs.TargetList, p) ~= nil
             local isLoopTarget = _G.BringTargets[p.Name] ~= nil
             
-            local statusText = "[ Neutral Status ]"
-            if isAuraTarget and isLoopTarget then statusText = "[ AURA + LOOPING ]"
-            elseif isAuraTarget then statusText = "[ AURA ACTIVE ]"
-            elseif isLoopTarget then statusText = "[ LOOP ACTIVE ]" Required end
+            local statusText = "[ Offline Status ]"
+            if isAuraTarget and isLoopTarget then statusText = "[ ACTIVE TARGET ]"
+            elseif isAuraTarget then statusText = "[ AURA ENGAGED ]"
+            elseif isLoopTarget then statusText = "[ LOOP ENGAGED ]" end
 
-            TargetTab:Button({
-                Title = p.DisplayName .. " (@" .. p.Name .. ") " .. statusText,
+            local newBtn = TargetTab:Button({
+                Title = p.Name .. " " .. statusText,
                 Callback = function()
-                    -- Multi-Select routing matrix integration
                     local auraIdx = table.find(getgenv().configs.TargetList, p)
                     if auraIdx then
                         table.remove(getgenv().configs.TargetList, auraIdx)
@@ -272,15 +260,16 @@ local function populatePlayerTargetElements()
                         table.insert(getgenv().configs.TargetList, p)
                         _G.BringTargets[p.Name] = true
                     end
-                    populatePlayerTargetElements() -- Dynamic Roster Update
+                    populatePlayerTargetElements() -- Instantly redraw status layout
                 end
             })
+            table.insert(activeButtons, newBtn)
         end
     end
 end
 
 TargetTab:Button({
-    Title = "🔄 Refresh Target Player List",
+    Title = "🔄 Force Manual Roster Refresh",
     Callback = function() populatePlayerTargetElements() end
 })
 
@@ -289,7 +278,7 @@ Players.PlayerAdded:Connect(populatePlayerTargetElements)
 Players.PlayerRemoving:Connect(populatePlayerTargetElements)
 
 -- ==========================================================
--- 🚀 HIGH-VELOCITY CORE RUNTIME SYNCHRONIZATION
+-- 🚀 HIGH-VELOCITY RUNTIME LOOPS
 -- ==========================================================
 local spawnHandled = false
 
@@ -300,11 +289,11 @@ local function runInstantSpawnSetup(char)
         if spawnHandled then return end
         spawnHandled = true
         
-        if _G.Settings.ToolGrabber then triggerQuantumGrab() end[cite: 11]
+        if _G.Settings.ToolGrabber then triggerQuantumGrab() end
         if _G.Settings.UseTools then
-            equipTools()[cite: 12]
+            equipTools()
             for i = 1, 3 do
-                activateTools()[cite: 12]
+                activateTools()
                 RunService.Heartbeat:Wait()
             end
         end
@@ -320,11 +309,11 @@ if LP.Character then
     runInstantSpawnSetup(LP.Character)
 end
 
--- Persistent Loop Harness running directly inside frame cycles
-RunService.Heartbeat:Connect(function(dt)
-    if _G.Settings.UseTools then equipTools() end[cite: 12]
+-- Global Engine Run-ticks
+RunService.Heartbeat:Connect(function()
+    if _G.Settings.UseTools then equipTools() end
 
-    -- [SOURCE 16] Loopbring Vector Engine Execution
+    -- [SOURCE 16] Loopbring Processing Loop
     if _G.Settings.Loopbring and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         local myRoot = LP.Character.HumanoidRootPart
         for name in pairs(_G.BringTargets) do
@@ -332,12 +321,12 @@ RunService.Heartbeat:Connect(function(dt)
             local tRoot = p and p.Character and p.Character:FindFirstChild("HumanoidRootPart")
             if tRoot then
                 local targetPosition = myRoot.Position + (myRoot.CFrame.LookVector * 2)
-                tRoot.CFrame = CFrame.new(targetPosition, myRoot.Position) * CFrame.Angles(0, math.rad(180), 0)[cite: 16]
+                tRoot.CFrame = CFrame.new(targetPosition, myRoot.Position) * CFrame.Angles(0, math.rad(180), 0)
             end
         end
     end
 
-    -- [SOURCE 17] Kill Aura Network Engine
+    -- [SOURCE 17] Multi-Target Damage Aura Loop
     if _G.Settings.KillAura and #getgenv().configs.TargetList > 0 and LP.Character then
         local Ignorelist = OverlapParams.new()
         Ignorelist.FilterType = Enum.RaycastFilterType.Include
@@ -355,12 +344,11 @@ RunService.Heartbeat:Connect(function(dt)
                 for _, obj in ipairs(tool:GetDescendants()) do
                     if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then
                         local touch = obj.Parent
-                        local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)[cite: 17]
+                        local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)
                         for _, pPart in ipairs(parts) do
-                            local charAncestor = pPart:FindFirstAncestorWhichIsA("Model")
-                            if charAncestor and tool:IsDescendantOf(workspace) then
-                                firetouchinterest(touch, pPart, 1)[cite: 17]
-                                firetouchinterest(touch, pPart, 0)[cite: 17]
+                            if tool:IsDescendantOf(workspace) then
+                                firetouchinterest(touch, pPart, 1)
+                                firetouchinterest(touch, pPart, 0)
                             end
                         end
                     end
@@ -375,8 +363,8 @@ RunService.PreSimulation:Connect(function(dt)
     pulseAccum = pulseAccum + dt
     while pulseAccum >= pulseInterval do
         pulseAccum = pulseAccum - pulseInterval
-        activateTools()[cite: 12]
+        activateTools()
     end
 end)
 
-print("⚡ Clean Structured PvP Matrix Hub Ready & Loaded Spotlessly.")
+print("⚡ Core PvP Matrix Booted Successfully.")
