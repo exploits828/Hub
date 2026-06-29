@@ -1,5 +1,5 @@
 -- DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (COMPACT V8)
-local WindUI=loadstring(game:HttpGet("https://rawusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
+local WindUI=loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService,Players,Stats,TeleportService,LP=game:GetService("RunService"),game:GetService("Players"),game:GetService("Stats"),game:GetService("TeleportService"),game:GetService("Players").LocalPlayer
 local Window=WindUI:CreateWindow({Title="DEATH WATCHERS | MULTI-MATRIX",Icon="shield",Author="DW Clan Core",Folder="DeathWatchers_WindUI",Size=UDim2.fromOffset(580,520),Theme="Dark"})
 _G.Settings={UseTools=false,Respawn=false,ToolGrabber=true,Loopbring=false,KillAura=false,HitboxExpander=false,HitboxSize=12,HitAmplifier=false,ToolFollow=false,ZeroCooldown=false}
