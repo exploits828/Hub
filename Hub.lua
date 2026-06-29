@@ -157,12 +157,48 @@ AdminTab:CreateButton({
 })
 
 AdminTab:CreateButton({
+	Name = "📋 Copy Nameless Admin",
+	Callback = function()
+		if setclipboard then
+			setclipboard("loadstring(game:HttpGet('https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source'))()")
+			Rayfield:Notify({Title = "Copied", Content = "Script copied to clipboard!", Duration = 3})
+		else
+			Rayfield:Notify({Title = "Error", Content = "Executor doesn't support clipboard copying.", Duration = 3})
+		end
+	end
+})
+
+AdminTab:CreateButton({
 	Name = "▶ Execute M7 Admin",
 	Callback = function()
 		pcall(function() loadstring(game:HttpGet("https://mois7.xyz/loader"))() end)
 		Rayfield:Notify({Title = "Executed", Content = "M7 Admin loaded.", Duration = 3})
 	end
 })
+
+AdminTab:CreateButton({
+	Name = "📋 Copy M7 Admin",
+	Callback = function()
+		if setclipboard then
+			setclipboard('loadstring(game:HttpGet("https://mois7.xyz/loader"))()')
+			Rayfield:Notify({Title = "Copied", Content = "Script copied to clipboard!", Duration = 3})
+		end
+	end
+})
+
+-- Info Tabs
+local ServerTab = Window:CreateTab("Server", 0)
+ServerTab:CreateLabel("Latency: " .. math.floor(LocalPlayer:GetNetworkPing() * 1000) .. "ms")
+ServerTab:CreateButton({
+	Name = "Copy JobId",
+	Callback = function()
+		if setclipboard then setclipboard(game.JobId) end
+	end
+})
+
+local DisplayTab = Window:CreateTab("Identity", 0)
+DisplayTab:CreateLabel("DisplayName: " .. (LocalPlayer.DisplayName or "Unknown"))
+DisplayTab:CreateLabel("Username: " .. LocalPlayer.Name)
 
 -- /* STREAMING_CHUNK:Core Module Logic Loops */
 
