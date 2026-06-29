@@ -1,11 +1,10 @@
 -- /* STREAMING_CHUNK:Initializing Services & Rayfield */
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
--- Global States for Toggles
+-- Global States
 _G.DW_TargetPlayer = nil
 _G.DW_Hitbox = false
 _G.DW_HitAmp = false
@@ -15,6 +14,10 @@ _G.DW_ToolGrabber = false
 _G.DW_TargetAura = false
 _G.DW_Loopbring = false
 _G.DW_AntiSpawnKill = false 
+_G.DW_AntiLoopbring = false
+_G.DW_AntiKillAura = false
+_G.DW_AntiTargetAura = false
+_G.DW_AntiLag = false
 _G.LastAuraTick = 0 
 
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
@@ -37,139 +40,88 @@ local Window = Rayfield:CreateWindow({
 	}
 })
 
--- /* STREAMING_CHUNK:Building the Home Tab */
+-- /* STREAMING_CHUNK:Tabs Construction */
 local HomeTab = Window:CreateTab("Home", 4483362458)
 local CombatSection = HomeTab:CreateSection("Combat Modules")
-HomeTab:CreateToggle({Name = "Hitbox Expander (Size 10)", CurrentValue = false, Flag = "HitboxToggle", Callback = function(state) _G.DW_Hitbox = state end})
-HomeTab:CreateToggle({Name = "Hit Amplifier (Max Speed)", CurrentValue = false, Flag = "HitAmpToggle", Callback = function(state) _G.DW_HitAmp = state end})
+HomeTab:CreateToggle({Name = "Hitbox Expander (Size 10)", Flag = "HitboxToggle", Callback = function(state) _G.DW_Hitbox = state end})
+HomeTab:CreateToggle({Name = "Hit Amplifier (Max Speed)", Flag = "HitAmpToggle", Callback = function(state) _G.DW_HitAmp = state end})
 
 local UtilitySection = HomeTab:CreateSection("Utility Modules")
-HomeTab:CreateToggle({Name = "Auto Use All Tools", CurrentValue = false, Flag = "UseToolsToggle", Callback = function(state) _G.DW_UseTools = state end})
-HomeTab:CreateToggle({Name = "Quantum Tool Grabber", CurrentValue = false, Flag = "ToolGrabberToggle", Callback = function(state) _G.DW_ToolGrabber = state end})
-HomeTab:CreateToggle({Name = "Instant Respawn (Bypass Death)", CurrentValue = false, Flag = "InstantRespawnToggle", Callback = function(state) _G.DW_InstantRespawn = state end})
-HomeTab:CreateToggle({Name = "Anti-Spawn Kill (Escape Loopbring)", CurrentValue = false, Flag = "AntiSpawnKillToggle", Callback = function(state) _G.DW_AntiSpawnKill = state end})
+HomeTab:CreateToggle({Name = "Auto Use All Tools", Flag = "UseToolsToggle", Callback = function(state) _G.DW_UseTools = state end})
+HomeTab:CreateToggle({Name = "Quantum Tool Grabber", Flag = "ToolGrabberToggle", Callback = function(state) _G.DW_ToolGrabber = state end})
+HomeTab:CreateToggle({Name = "Instant Respawn (Bypass Death)", Flag = "InstantRespawnToggle", Callback = function(state) _G.DW_InstantRespawn = state end})
 
-HomeTab:CreateButton({
-	Name = "Enable No Cooldown",
-	Callback = function()
-		pcall(function()
-			hookfunction(wait, function() return RunService.PostSimulation:Wait() end)
-			hookfunction(task.wait, function() return RunService.PostSimulation:Wait() end)
-			hookfunction(delay, function(_,func) task.spawn(func) end)
-			hookfunction(spawn, function(func) task.spawn(func) end)
-		end)
-		Rayfield:Notify({Title = "Success", Content = "No Cooldown enabled globally.", Duration = 3})
-	end
-})
+-- /* STREAMING_CHUNK:New Anti Section */
+local AntiTab = Window:CreateTab("Anti", 4483362458)
+AntiTab:CreateToggle({Name = "Anti-Spawn Kill", Callback = function(state) _G.DW_AntiSpawnKill = state end})
+AntiTab:CreateToggle({Name = "Anti-Loopbring", Callback = function(state) _G.DW_AntiLoopbring = state end})
+AntiTab:CreateToggle({Name = "Anti-Kill Aura", Callback = function(state) _G.DW_AntiKillAura = state end})
+AntiTab:CreateToggle({Name = "Anti-Targeted Aura (Shield)", Callback = function(state) _G.DW_AntiTargetAura = state end})
+AntiTab:CreateToggle({Name = "Anti-Lag (Disable Effects)", Callback = function(state) 
+    _G.DW_AntiLag = state
+    if state then for _, v in pairs(workspace:GetDescendants()) do if v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end end end
+end})
 
--- /* STREAMING_CHUNK:Targeting Tab */
+-- /* STREAMING_CHUNK:Targeting & Admin */
 local TargetTab = Window:CreateTab("Targeting", 4483362458)
-local function GetPlayerNames()
-	local names = {}
-	for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(names, p.Name) end end
-	return names
-end
+local TargetDropdown = TargetTab:CreateDropdown({Name = "Select Target", Options = {}, Callback = function(Option) _G.DW_TargetPlayer = Option[1] end})
+TargetTab:CreateToggle({Name = "Targeted Kill Aura", Flag = "TargetKillAura", Callback = function(state) _G.DW_TargetAura = state end})
+TargetTab:CreateToggle({Name = "Targeted Loopbring", Flag = "TargetLoopbring", Callback = function(state) _G.DW_Loopbring = state end})
 
-local TargetDropdown = TargetTab:CreateDropdown({Name = "Select Target Player", Options = GetPlayerNames(), CurrentOption = {"None"}, MultipleOptions = false, Flag = "TargetDropdown", Callback = function(Option) _G.DW_TargetPlayer = Option[1] end})
-TargetTab:CreateButton({Name = "Refresh Player List", Callback = function() TargetDropdown:Refresh(GetPlayerNames(), true) end})
-TargetTab:CreateToggle({Name = "Targeted Kill Aura", CurrentValue = false, Flag = "TargetKillAura", Callback = function(state) _G.DW_TargetAura = state end})
-TargetTab:CreateToggle({Name = "Targeted Loopbring", CurrentValue = false, Flag = "TargetLoopbring", Callback = function(state) _G.DW_Loopbring = state end})
-
--- /* STREAMING_CHUNK:Admin and Info Tabs */
 local AdminTab = Window:CreateTab("Admin", 4483362458)
-AdminTab:CreateButton({Name = "▶ Execute Nameless Admin", Callback = function() pcall(function() loadstring(game:HttpGet('https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source'))() end) end})
-AdminTab:CreateButton({Name = "▶ Execute M7 Admin", Callback = function() pcall(function() loadstring(game:HttpGet("https://mois7.xyz/loader"))() end) end})
+AdminTab:CreateButton({Name = "Execute Nameless Admin", Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source'))() end})
+AdminTab:CreateButton({Name = "Execute M7 Admin", Callback = function() loadstring(game:HttpGet("https://mois7.xyz/loader"))() end})
 
--- /* STREAMING_CHUNK:Core Module Logic Loops */
-local GuideEvent = ReplicatedStorage:FindFirstChild("Guide")
-local function BindRespawn(char)
-	local hum = char:WaitForChild("Humanoid", 5)
-	local hrp = char:WaitForChild("HumanoidRootPart", 5)
-	if _G.DW_AntiSpawnKill and hrp then
-		task.spawn(function()
-			local startTime = tick()
-			while tick() - startTime < 1.5 do
-				if hrp and hrp.Parent then hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-15, 15), 0, math.random(-15, 15)) hrp.Velocity = Vector3.new(0, 0, 0) end
-				RunService.Heartbeat:Wait()
-			end
-		end)
-	end
-	if hum then
-		local triggered = false
-		hum.HealthChanged:Connect(function(hp) if _G.DW_InstantRespawn and not triggered and hp <= 0 then triggered = true pcall(function() if GuideEvent then GuideEvent:FireServer() else LocalPlayer:LoadCharacter() end end) end end)
-	end
-end
-LocalPlayer.CharacterAdded:Connect(BindRespawn)
-if LocalPlayer.Character then BindRespawn(LocalPlayer.Character) end
-
+-- /* STREAMING_CHUNK:Core Module Logic */
 RunService.Heartbeat:Connect(function()
-	local myChar = LocalPlayer.Character
-	
-	-- Hitbox & Loopbring & UseTools (Restored)
-	if _G.DW_Hitbox then
-		for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then p.Character.HumanoidRootPart.Size = Vector3.new(10, 10, 10) p.Character.HumanoidRootPart.Transparency = 0.9 p.Character.HumanoidRootPart.CanCollide = false end end
-	end
-	
-	if _G.DW_UseTools and myChar then
-		for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do if tool:IsA("Tool") then tool.Parent = myChar end end
-		for _, tool in pairs(myChar:GetChildren()) do if tool:IsA("Tool") then pcall(tool.Activate, tool) end end
-	end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
 
-	-- Targeted Kill Aura & Hit Amplifier (Restored to original config)
-	if _G.DW_TargetAura or _G.DW_HitAmp then
-		if not myChar then return end
-		local currentTick = tick()
-		if currentTick - _G.LastAuraTick < 0.06 then return end
-		_G.LastAuraTick = currentTick
-		
-		local target = nil
-		if _G.DW_TargetAura and _G.DW_TargetPlayer then
-			local tPlayer = Players:FindFirstChild(_G.DW_TargetPlayer)
-			if tPlayer and tPlayer.Character then target = tPlayer.Character:FindFirstChild("HumanoidRootPart") end
-		end
+    -- Optimized Kill Aura & Anti-Targeting
+    if (_G.DW_TargetAura or _G.DW_HitAmp) and (tick() - _G.LastAuraTick > 0.05) then
+        _G.LastAuraTick = tick()
+        local targetPlayer = Players:FindFirstChild(_G.DW_TargetPlayer or "")
+        local targetHRP = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        for _, tool in ipairs(myChar:GetChildren()) do
+            if tool:IsA("Tool") then
+                if _G.DW_HitAmp then pcall(tool.Activate, tool) end
+                if _G.DW_TargetAura and targetHRP then
+                    local touch = tool:FindFirstChildWhichIsA("TouchTransmitter", true)
+                    if touch then pcall(firetouchinterest, touch.Parent, targetHRP, 0) pcall(firetouchinterest, touch.Parent, targetHRP, 1) end
+                end
+            end
+        end
+    end
 
-		for _, tool in ipairs(myChar:GetChildren()) do
-			if tool:IsA("Tool") then
-				if _G.DW_HitAmp then pcall(tool.Activate, tool) end
-				if _G.DW_TargetAura and target then
-					local touchPart = tool:FindFirstChildWhichIsA("TouchTransmitter", true)
-					if touchPart then
-						pcall(firetouchinterest, touchPart.Parent, target, 0)
-						pcall(firetouchinterest, touchPart.Parent, target, 1)
-					end
-				end
-			end
-		end
-	end
+    -- Anti-Targeted Aura (Shield)
+    if _G.DW_AntiTargetAura then
+        local hrp = myChar:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Velocity = Vector3.new(0, 0, 0) end
+    end
 end)
 
--- /* STREAMING_CHUNK:Quantum Tool Grabber Logic */
+-- /* STREAMING_CHUNK:Tool Grabber */
 local padsByBase = {["Stone"]={}, ["Magic"]={}, ["Storm"]={}, ["Robotic"]={}}
 local toolToBase = {["Energy Sword"]="Stone", ["Staff"]="Magic", ["Axe"]="Storm", ["Fist"]="Robotic"}
-
 for _, d in ipairs(workspace:WaitForChild("Tycoons"):GetDescendants()) do
-	if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
-		local base = d.Parent.Parent.Parent.Name
-		if padsByBase[base] then table.insert(padsByBase[base], d.Parent) end
-	end
+    if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
+        local base = d.Parent.Parent.Parent.Name
+        if padsByBase[base] then table.insert(padsByBase[base], d.Parent) end
+    end
 end
 
-local function hasTool(name) return (LocalPlayer.Backpack:FindFirstChild(name) or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild(name))) ~= nil end
-
 task.spawn(function()
-	while task.wait(0.2) do
-		if _G.DW_ToolGrabber and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			local hrp = LocalPlayer.Character.HumanoidRootPart
-			for toolName, baseName in pairs(toolToBase) do
-				if not hasTool(toolName) then
-					for _, pad in ipairs(padsByBase[baseName]) do
-						if (pad.Position - hrp.Position).Magnitude < 1000 then
-							pcall(firetouchinterest, hrp, pad, 0)
-							pcall(firetouchinterest, hrp, pad, 1)
-						end
-					end
-				end
-			end
-		end
-	end
+    while task.wait(0.5) do
+        if _G.DW_ToolGrabber and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            for tName, bName in pairs(toolToBase) do
+                local has = (LocalPlayer.Backpack:FindFirstChild(tName) or LocalPlayer.Character:FindFirstChild(tName))
+                if not has then
+                    for _, pad in ipairs(padsByBase[bName]) do
+                        if (pad.Position - hrp.Position).Magnitude < 1000 then pcall(firetouchinterest, hrp, pad, 0) pcall(firetouchinterest, hrp, pad, 1) end
+                    end
+                end
+            end
+        end
+    end
 end)
