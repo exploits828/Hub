@@ -1,4 +1,4 @@
--- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.3 - BOOT FIXED)
+-- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.3)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -7,7 +7,7 @@ local TeleportService = game:GetService("TeleportService")
 local LP = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui") or LP:WaitForChild("PlayerGui")
 
--- Initialize Main Window Container with WindUI Dark Interface Framework
+-- Initialize Main Window Container
 local Window = WindUI:CreateWindow({
     Title = "DEATH WATCHERS | MULTI-MATRIX",
     Icon = "shield",
@@ -24,7 +24,8 @@ local Window = WindUI:CreateWindow({
 -- ==========================================================
 _G.Settings = {
     UseTools = false, Respawn = false, ToolGrabber = true, Loopbring = false,
-    KillAura = false, HitboxExpander = false, HitboxSize = 12, HitAmplifier = false,
+    KillAura = false, HitboxExpander = false, HitboxSize = 12, 
+    DoubleDamage = false, HitAmplifier = false, -- Added missing features back to baseline state
     ToolFollow = false, ZeroCooldown = false
 }
 
@@ -42,7 +43,7 @@ pcall(function()
 end)
 
 -- ==========================================================
--- ⚡ PARALLEL COMBAT ASSISTANCE LOGIC METHODS (THREAD ISOLATED)
+-- ⚡ PARALLEL COMBAT ASSISTANCE LOGIC METHODS
 -- ==========================================================
 local padsByBase, activeLoops = {}, {}
 local allowedBases = {Stone=true, Magic=true, Storm=true, Robotic=true}
@@ -56,7 +57,6 @@ local function registerPad(pad)
     table.insert(padsByBase[base.Name], pad)
 end
 
--- Wrapped in task.spawn to prevent blocking the UI creation below
 task.spawn(function()
     local Tycoons = workspace:WaitForChild("Tycoons", 5)
     if Tycoons then
@@ -131,7 +131,7 @@ local function fixToolPhysics(tool)
 end
 
 -- ==========================================================
--- ⚔️ HEADLESS RTX ULTRA USE TOOLS ENGINE
+-- ⚔️ TOOL ACTIVATION ENGINES
 -- ==========================================================
 local pulseAccum = 0
 local pulseInterval = 1 / 70
@@ -296,9 +296,10 @@ local function startSpectating()
 end
 
 -- ==========================================================
--- 🎨 WINDUI DASHBOARD TABS CONFIGURATION (SAFE SYSTEM)
+-- 🎨 WINDUI DASHBOARD TABS CONFIGURATION
 -- ==========================================================
 local CombatTab  = Window:Tab({ Title = "PvP Mods", Icon = "swords" })
+local SettingsTab = Window:Tab({ Title = "Settings & Multipliers", Icon = "settings" }) -- Added requested Settings Section
 local GlitchTab  = Window:Tab({ Title = "Tycoon Glitch", Icon = "zap" })
 local TargetTab  = Window:Tab({ Title = "Targeting", Icon = "crosshair" })
 local AdminTab   = Window:Tab({ Title = "Admin", Icon = "terminal" })
@@ -334,7 +335,6 @@ pcall(function()
         end
     })
     CombatTab:Slider({ Title = "Hitbox Dimension Radius", Min = 2, Max = 30, Value = 12, Callback = function(v) _G.Settings.HitboxSize = v end })
-    CombatTab:Toggle({ Title = "Ultra Smart Hit Amplifier", Value = false, Callback = function(v) _G.Settings.HitAmplifier = v end })
     CombatTab:Toggle({
         Title = "Zero-Gravity Torso Tool Follow",
         Value = false,
@@ -353,7 +353,29 @@ pcall(function()
     })
 end)
 
--- --- 2. TYCOON GLITCH ENVIRONMENT ---
+-- --- 2. SETTINGS & MULTIPLIERS (NEW REQUESTS STAGED HERE) ---
+pcall(function()
+    SettingsTab:Section({ Title = "🔥 Damage Modifiers" })
+    SettingsTab:Toggle({ 
+        Title = "Force 2x Damage Multiplier", 
+        Value = false, 
+        Callback = function(v) 
+            _G.Settings.DoubleDamage = v 
+        end 
+    })
+    SettingsTab:Toggle({ 
+        Title = "Hit Amplifier Engine", 
+        Value = false, 
+        Callback = function(v) 
+            _G.Settings.HitAmplifier = v 
+        end 
+    })
+    
+    SettingsTab:Section({ Title = "Config Overrides" })
+    SettingsTab:Paragraph({ Title = "System Note", Content = " Toggling 2x Damage and Hit Amplifier stacks your firetouch interests concurrently inside the pipeline execution framework below." })
+end)
+
+-- --- 3. TYCOON GLITCH ENVIRONMENT ---
 pcall(function()
     GlitchTab:Section({ Title = "🌀 Server Rejoin Persistence Engine" })
     GlitchTab:Button({
@@ -367,75 +389,54 @@ pcall(function()
             end)
         end
     })
-    GlitchTab:Section({ Title = "💡 How to Use the Tycoon Glitch" })
-    GlitchTab:Paragraph({ Title = "Execution Method:", Content = "1. Claim your first tycoon normally.\n2. Click 'Super Fast Same-Server Rejoin'.\n3. Because your character disconnects and re-authenticates inside milliseconds, the server cache delays clearing your old claim.\n4. When you land back in, quickly run to a second open tycoon and claim it!" })
 end)
 
--- --- 3. DETAILED SERVER SECTION ---
+-- --- 4. DETAILED SERVER SECTION ---
 local PlayerCountCard, PingCard, FpsCard, ServerTimeCard
 pcall(function()
     ServerTab:Section({ Title = "👁️ Overwatch Intelligence" })
-    ServerTab:Button({
-        Title = "Spy on Players (Spectator Mode)",
-        Desc = "Deploys a bottom HUD to cycle cameras through active players.",
-        Callback = function() startSpectating() end
-    })
+    ServerTab:Button({Title = "Spy on Players (Spectator Mode)", Callback = function() startSpectating() end })
 
     ServerTab:Section({ Title = "🖥️ Live Environment Telemetry" })
-    PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching...", Desc = "Total players currently connected" })
-    PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching...", Desc = "Real-time client response ping" })
-    FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching...", Desc = "Render performance speed" })
-    ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching...", Desc = "Elapsed time since instance startup" })
-
-    ServerTab:Section({ Title = "Bases & Instances" })
-    ServerTab:Button({ Title = "Copy Server Job Identification ID", Desc = "Click to save game.JobId to local clipboard", Callback = function() setclipboard(game.JobId) end })
+    PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching..." })
+    PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching..." })
+    FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching..." })
+    ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching..." })
 
     task.spawn(function()
         while task.wait(0.5) do
             pcall(function()
                 if PlayerCountCard then PlayerCountCard:SetTitle("Active Roster: " .. #Players:GetPlayers() .. " / " .. Players.MaxPlayers) end
-                if PingCard then
-                    local ping = math.round(Stats.Network.ServerToClientPing:GetValue() * 1000)
-                    PingCard:SetTitle("Network Latency: " .. ping .. " ms")
-                end
-                if FpsCard then
-                    local fps = math.round(1 / RunService.Heartbeat:Wait())
-                    FpsCard:SetTitle("Core Frame Rate: " .. fps .. " FPS")
-                end
+                if PingCard then PingCard:SetTitle("Network Latency: " .. math.round(Stats.Network.ServerToClientPing:GetValue() * 1000) .. " ms") end
+                if FpsCard then FpsCard:SetTitle("Core Frame Rate: " .. math.round(1 / RunService.Heartbeat:Wait()) .. " FPS") end
                 if ServerTimeCard then
                     local uptime = math.round(workspace.DistributedGameTime)
-                    local hours = math.floor(uptime / 3600)
-                    local minutes = math.floor((uptime % 3600) / 60)
-                    local seconds = uptime % 60
-                    ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", hours, minutes, seconds))
+                    ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", math.floor(uptime / 3600), math.floor((uptime % 3600) / 60), uptime % 60))
                 end
             end)
         end
     end)
 end)
 
--- --- 4. ADMIN UTILITIES ---
+-- --- 5. ADMIN UTILITIES ---
 pcall(function()
     AdminTab:Section({ Title = "🛠️ Operational Overrides" })
-    AdminTab:Button({ Title = "Load Nameless Admin Tools", Desc = "Executes the universal high-privilege administrative script environment", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
+    AdminTab:Button({ Title = "Load Nameless Admin Tools", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
 end)
 
--- --- 5. IDENTITY PROFILE ---
+-- --- 6. IDENTITY PROFILE ---
 pcall(function()
     InfoTab:Section({ Title = "👤 Local Client Signatures" })
-    InfoTab:Button({ Title = "Player Identity: " .. LP.Name, Desc = "Click to copy username to clipboard", Callback = function() setclipboard(LP.Name) end })
-    InfoTab:Button({ Title = "Network Account ID: " .. LP.UserId, Desc = "Click to copy user identification number", Callback = function() setclipboard(tostring(LP.UserId)) end })
+    InfoTab:Button({ Title = "Player Identity: " .. LP.Name })
 end)
 
 -- ==========================================================
--- 🎯 DYNAMIC TARGETING SYSTEMS INTERFACE (ISOLATED EXECUTION)
+-- 🎯 DYNAMIC TARGETING SYSTEMS INTERFACE
 -- ==========================================================
 local activeButtonsMap = {}
 local function populatePlayerTargetElements()
     pcall(function()
-        for playerInstance, buttonRef in pairs(activeButtonsMap) do
-            pcall(function() buttonRef:Destroy() end)
-        end
+        for playerInstance, buttonRef in pairs(activeButtonsMap) do pcall(function() buttonRef:Destroy() end) end
         table.clear(activeButtonsMap)
 
         for _, p in ipairs(Players:GetPlayers()) do
@@ -450,16 +451,10 @@ local function populatePlayerTargetElements()
 
                 local targetButton = TargetTab:Button({
                     Title = p.DisplayName .. " (" .. statusText .. ")",
-                    Desc = "Toggle @" .. p.Name .. " inside the combat matrix",
                     Callback = function()
                         local auraIdx = table.find(getgenv().configs.TargetList, p)
-                        if auraIdx then
-                            table.remove(getgenv().configs.TargetList, auraIdx)
-                            _G.BringTargets[p.Name] = nil
-                        else
-                            table.insert(getgenv().configs.TargetList, p)
-                            _G.BringTargets[p.Name] = true
-                        end
+                        if auraIdx then table.remove(getgenv().configs.TargetList, auraIdx) _G.BringTargets[p.Name] = nil
+                        else table.insert(getgenv().configs.TargetList, p) _G.BringTargets[p.Name] = true end
                         populatePlayerTargetElements()
                     end
                 })
@@ -474,7 +469,7 @@ pcall(function()
     TargetTab:Toggle({ Title = "Targeted Kill Aura Network", Value = false, Callback = function(v) _G.Settings.KillAura = v end })
     TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
     TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
-    TargetTab:Button({ Title = "🔄 Refresh Target Player List", Desc = "Forces manual layout rebuild and updates visibility tags", Callback = function() populatePlayerTargetElements() end })
+    TargetTab:Button({ Title = "🔄 Refresh Target Player List", Callback = function() populatePlayerTargetElements() end })
     
     populatePlayerTargetElements()
     Players.PlayerAdded:Connect(populatePlayerTargetElements)
@@ -492,19 +487,15 @@ local function runInstantSpawnSetup(char)
         updateToolCache()
         
         for _, t in ipairs(char:GetChildren()) do if t:IsA("Tool") then fixToolPhysics(t) end end
-        char.ChildAdded:Connect(function(c)
-            if c:IsA("Tool") then task.wait() updateToolCache() fixToolPhysics(c) end
-        end)
-        
+        char.ChildAdded:Connect(function(c) if c:IsA("Tool") then task.wait() updateToolCache() fixToolPhysics(c) end end)
         if _G.Settings.ToolGrabber then triggerQuantumGrab() end
     end)
 end
 
 LP.CharacterAdded:Connect(runInstantSpawnSetup)
--- Fixed: Wrapped initial setup in task.spawn to prevent blocking UI compilation
 if LP.Character then task.spawn(runInstantSpawnSetup, LP.Character) end
 
--- Persistent Character State Enforcement Loop
+-- Runtime Physics/Combat Process Loops
 RunService.Heartbeat:Connect(function(dt)
     local char = LP.Character
     if not char then return end
@@ -520,17 +511,13 @@ RunService.Heartbeat:Connect(function(dt)
                         hrp.Size = Vector3.new(_G.Settings.HitboxSize, _G.Settings.HitboxSize, _G.Settings.HitboxSize)
                         hrp.Transparency = 0.85
                         hrp.CanCollide = false
-                        if not hrp:FindFirstChild("HitboxVisual") then
-                            local box = Instance.new("SelectionBox")
-                            box.Name = "HitboxVisual" box.Adornee = hrp box.LineThickness = 0.04 box.Color3 = Color3.fromRGB(0, 132, 255) box.Parent = hrp
-                        end
                     end)
                 end
             end
         end
     end
 
-    -- Kill Aura Matrix (Vega X Engine Optimized)
+    -- Kill Aura Pipeline Matrix including the new Double Damage/Hit Amp loops
     if _G.Settings.KillAura and #getgenv().configs.TargetList > 0 then
         pcall(function()
             local validTargets = {}
@@ -546,7 +533,22 @@ RunService.Heartbeat:Connect(function(dt)
                             local touch = obj.Parent
                             local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)
                             for _, pPart in ipairs(parts) do
-                                if tool:IsDescendantOf(workspace) then firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0) end
+                                if tool:IsDescendantOf(workspace) then 
+                                    -- Baseline Attack Frame
+                                    firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0)
+                                    
+                                    -- 2x Damage Trigger Intercept
+                                    if _G.Settings.DoubleDamage then
+                                        firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0)
+                                    end
+                                    
+                                    -- Hit Amplifier Packet Burst Trigger
+                                    if _G.Settings.HitAmplifier then
+                                        for i = 1, 3 do
+                                            firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0)
+                                        end
+                                    end
+                                end
                             end
                         end
                     end
@@ -559,10 +561,7 @@ end)
 RunService.PreSimulation:Connect(function(dt)
     if not _G.Settings.UseTools then return end
     pulseAccum = pulseAccum + dt
-    while pulseAccum >= pulseInterval do 
-        pulseAccum = pulseAccum - pulseInterval 
-        activateTools() 
-    end
+    while pulseAccum >= pulseInterval do pulseAccum = pulseAccum - pulseInterval activateTools() end
 end)
 
-WindUI:Notify({ Title = "DEATH WATCHERS V8.3", Content = "Asynchronous tab construction finalized. Connected.", Duration = 5 })
+WindUI:Notify({ Title = "DEATH WATCHERS V8.3", Content = "Pipeline synchronized. Settings tab integrated.", Duration = 5 })
