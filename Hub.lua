@@ -1,4 +1,4 @@
--- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.3 RESTORED)
+-- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (V8.3 GOD-TIER OVERHAUL)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -24,13 +24,28 @@ local Window = WindUI:CreateWindow({
 -- ==========================================================
 _G.Settings = {
     UseTools = false, Respawn = false, ToolGrabber = true, Loopbring = false,
-    KillAura = false, HitboxExpander = false, HitboxSize = 12, HitAmplifier = false,
-    ToolFollow = false, ZeroCooldown = false, LoopbringDistance = 3
+    HitboxExpander = false, HitboxSize = 12, HitAmplifier = false, DoubleDamage = false,
+    ToolFollow = false, ZeroCooldown = false, LoopbringDistance = 3,
+    AntiPingSpike = false, AntiLagback = false
 }
 
 _G.BringTargets = {}
-getgenv().configs = { connections = {}, Size = Vector3.new(30, 30, 30), TargetList = {} }
-local modifiedHitboxes, cachedToolParts, cachedTargetTorsos = {}, {}, {}
+
+-- Global state management for custom Instant Aura logic
+if getgenv().configs and getgenv().configs.connections then
+    for _, c in ipairs(getgenv().configs.connections) do pcall(function() c:Disconnect() end) end
+    table.clear(getgenv().configs)
+end
+
+getgenv().configs = {
+    connections = {},
+    Size = Vector3.new(30, 30, 30),
+    TargetList = {}
+}
+
+local modifiedHitboxes, cachedToolParts = {}, {}
+local Ignorelist = OverlapParams.new()
+Ignorelist.FilterType = Enum.RaycastFilterType.Include
 
 -- ⚡ DYNAMIC 0 COOLDOWN BREAKER HOOK ENGINE
 local oWait, oTWait, oDelay, oSpawn
@@ -38,11 +53,11 @@ pcall(function()
     oWait = hookfunction(wait, function(...) if _G.Settings.ZeroCooldown then return RunService.PostSimulation:Wait() else return oWait(...) end end)
     oTWait = hookfunction(task.wait, function(...) if _G.Settings.ZeroCooldown then return RunService.PostSimulation:Wait() else return oTWait(...) end end)
     oDelay = hookfunction(delay, function(t, func) if _G.Settings.ZeroCooldown then return task.spawn(func) else return oDelay(t, func) end end)
-    oSpawn = hookfunction(spawn, function(func) if _G.Settings.ZeroCooldown then return task.spawn(func) else return oSpawn(func) end end)
+    oSpawn = hookfunction(spawn, function(func) if _G.Settings.ZeroCooldown then return task.spawn(func) else return oSpawn(...) end end)
 end)
 
 -- ==========================================================
--- ⚡ NEW TOOL GRABBER LOGIC ENGINE (NO DELAY)
+-- ⚡ FIXED QUANTUM TOOL GRABBER ENGINE (RESPAWN PERSISTENT)[source: 5]
 -- ==========================================================
 local Tycoons = workspace:WaitForChild("Tycoons")
 local PAD_RANGE = 1000
@@ -93,7 +108,6 @@ local function getClosestPad(pads, root)
 end
 
 local function startToolLoop(toolName)
-	if activeLoops[toolName] or not _G.Settings.ToolGrabber then return end
 	local base = toolToBase[toolName]
 	if not base then return end
 
@@ -123,11 +137,12 @@ end
 
 local function triggerQuantumGrab()
 	if not _G.Settings.ToolGrabber then return end
+    table.clear(activeLoops) -- Vital Fix: Clears old loop configurations completely upon death invocation[source: 5]
 	for toolName in pairs(toolToBase) do startToolLoop(toolName) end
 end
 
 -- ==========================================================
--- 🛡️ TOOL PHYSICS & TORSO PACK CACHING
+-- 🛡️ TOOL PHYSICS CACHING & HANDLING
 -- ==========================================================
 local function getToolPart(tool)
     if tool:FindFirstChild("Handle") and tool.Handle:IsA("BasePart") then return tool.Handle end
@@ -155,8 +170,55 @@ local function fixToolPhysics(tool)
 end
 
 -- ==========================================================
--- ⚔️ HEADLESS RTX ULTRA USE TOOLS ENGINE (NO DELAY LOOP)
+-- ⚔️ COMBAT UTILITIES FOR INJECTED AURA IMPLEMENTATION[cite: 4]
 -- ==========================================================
+local function GetTouchInterest(tool)
+	for _, obj in ipairs(tool:GetDescendants()) do
+		if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then
+			return obj.Parent
+		end
+	end
+end
+
+local function GetCharacters()
+	local t = {}
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and p.Character and p.Character:FindFirstChild("Humanoid") then
+			if p.Character.Humanoid.Health > 0 then
+				table.insert(t, p.Character)
+			end
+		end
+	end
+	return t
+end
+
+local function Attack(tool, touch, part)
+	if tool:IsDescendantOf(workspace) then
+		firetouchinterest(touch, part, 1)
+		firetouchinterest(touch, part, 0)
+	end
+end
+
+local function ApplyDamageInstant(tool, touch)
+	local parts = workspace:GetPartBoundsInBox(
+		touch.CFrame,
+		touch.Size + getgenv().configs.Size,
+		Ignorelist
+	)
+
+	for _, p in ipairs(parts) do
+		local char = p:FindFirstAncestorWhichIsA("Model")
+		if char then
+			for _, target in ipairs(getgenv().configs.TargetList) do
+				if target.Character == char then
+					Attack(tool, touch, p)
+					break
+				end
+			end
+		end
+	end
+end
+
 local function equipTools()
     local char, bp = LP.Character, LP.Backpack
     if not char or not bp then return end
@@ -352,6 +414,7 @@ pcall(function()
     })
     CombatTab:Slider({ Title = "Hitbox Dimension Radius", Min = 2, Max = 30, Value = 12, Callback = function(v) _G.Settings.HitboxSize = v end })
     CombatTab:Toggle({ Title = "Ultra Smart Hit Amplifier", Value = false, Callback = function(v) _G.Settings.HitAmplifier = v end })
+    CombatTab:Toggle({ Title = "God-Tier 2X Instant Damage Loop", Value = false, Callback = function(v) _G.Settings.DoubleDamage = v end })
     CombatTab:Toggle({
         Title = "Zero-Gravity Torso Tool Follow",
         Value = false,
@@ -388,7 +451,7 @@ pcall(function()
     GlitchTab:Paragraph({ Title = "Execution Method:", Content = "1. Claim your first tycoon normally.\n2. Click 'Super Fast Same-Server Rejoin'.\n3. Because your character disconnects and re-authenticates inside milliseconds, the server cache delays clearing your old claim.\n4. When you land back in, quickly run to a second open tycoon and claim it!" })
 end)
 
--- --- 3. TARGETING SYSTEMS (V8.3 EXACT RESTORATION) ---
+-- --- 3. TARGETING SYSTEMS (V8.3 EXTENDED WITH REWRITTEN INSTANT DAMAGE EXECUTION)[cite: 3, 4] ---
 local activeButtonsMap = {}
 local function populatePlayerTargetElements()
     pcall(function()
@@ -403,13 +466,13 @@ local function populatePlayerTargetElements()
                 local isLoopTarget = _G.BringTargets[p.Name] ~= nil
                 
                 local statusText = "[ Neutral Status ]"
-                if isAuraTarget and isLoopTarget then statusText = "[ AURA + LOOPING ]"
-                elseif isAuraTarget then statusText = "[ AURA ACTIVE ]"
-                elseif isLoopTarget then statusText = "[ LOOP ACTIVE ]" end
+                if isAuraTarget and isLoopTarget then statusText = "[ SPAWN KILLING + LOOPING ]"
+                elseif isAuraTarget then statusText = "[ AURA MATRIX ACTIVE ]"
+                elseif isLoopTarget then statusText = "[ LOOP VECTOR ACTIVE ]" end
 
                 local targetButton = TargetTab:Button({
                     Title = p.DisplayName .. " (" .. statusText .. ")",
-                    Desc = "Toggle @" .. p.Name .. " inside the combat matrix",
+                    Desc = "Instantly injects @" .. p.Name .. " into high-velocity kill threads[cite: 4]",
                     Callback = function()
                         local auraIdx = table.find(getgenv().configs.TargetList, p)
                         if auraIdx then
@@ -430,7 +493,6 @@ end
 
 pcall(function()
     TargetTab:Section({ Title = "⚔️ Combat Routing Triggers" })
-    TargetTab:Toggle({ Title = "Targeted Kill Aura Network", Value = false, Callback = function(v) _G.Settings.KillAura = v end })
     TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
     TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
     TargetTab:Button({ Title = "🔄 Refresh Target Player List", Desc = "Forces manual layout rebuild and updates visibility tags", Callback = function() populatePlayerTargetElements() end })
@@ -440,12 +502,12 @@ pcall(function()
     Players.PlayerRemoving:Connect(populatePlayerTargetElements)
 end)
 
--- --- 4. SETTINGS SECTION (WITH UI COLOR/OPACITY SLIDERS) ---
+-- --- 4. SETTINGS SECTION (WITH LAGGING OVERRIDE ENGINES)[cite: 4] ---
 pcall(function()
     SettingsTab:Section({ Title = "🎨 UI Theme Customization" })
     
     SettingsTab:Colorpicker({
-        Title = "Interface Core Accent Accent Color",
+        Title = "Interface Core Accent Color",
         Default = Color3.fromRGB(0, 132, 255),
         Callback = function(color)
             pcall(function() Window:SetThemeColor(color) end)
@@ -462,6 +524,26 @@ pcall(function()
                 local mainFrame = Window.Instance or Window.Frame
                 if mainFrame then mainFrame.BackgroundTransparency = (value / 100) end
             end)
+        end
+    })
+
+    SettingsTab:Section({ Title = "📡 Network Stabilization Mechanics" })
+    SettingsTab:Toggle({
+        Title = "Anti-Ping Spike Matrix",
+        Value = false,
+        Callback = function(v)
+            _G.Settings.AntiPingSpike = v
+            if v then
+                settings().Network.IncomingReplicationLag = 0
+                pcall(function() settings().Network.DataSendRate = 60 end)
+            end
+        end
+    })
+    SettingsTab:Toggle({
+        Title = "Velocity Anti-Lagback Engine[cite: 4]",
+        Value = false,
+        Callback = function(v)
+            _G.Settings.AntiLagback = v
         end
     })
 
@@ -523,9 +605,8 @@ pcall(function()
 end)
 
 -- ==========================================================
--- 🚀 HIGH-VELOCITY CORE RUNTIME SYNCHRONIZATION
+-- 🚀 HIGH-VELOCITY RUNTIME IMPLEMENTATION LOOPS[cite: 4]
 -- ==========================================================
-local SpawnDeltWith = false
 local function runInstantSpawnSetup(char)
     if not char then return end
     pcall(function()
@@ -536,17 +617,19 @@ local function runInstantSpawnSetup(char)
         for _, t in ipairs(char:GetChildren()) do if t:IsA("Tool") then fixToolPhysics(t) end end
         char.ChildAdded:Connect(function(c) if c:IsA("Tool") then task.wait() updateToolCache() fixToolPhysics(c) end end)
         
-        if _G.Settings.ToolGrabber and not SpawnDeltWith then
-            SpawnDeltWith = true
+        if _G.Settings.ToolGrabber then
             triggerQuantumGrab()
         end
     end)
 end
 
-LP.CharacterAdded:Connect(function(char) SpawnDeltWith = false runInstantSpawnSetup(char) end)
+LP.CharacterAdded:Connect(function(char) 
+    task.wait(0.1) -- Provide buffer for level setup geometry
+    runInstantSpawnSetup(char) 
+end)
 if LP.Character then runInstantSpawnSetup(LP.Character) end
 
--- Runtime Main Frame Execution Loop
+-- Heartbeat Loop: Tool Verification + Loopbring + Injected Damage & Hit Amp Handling[cite: 4, 7]
 RunService.Heartbeat:Connect(function(dt)
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -555,6 +638,14 @@ RunService.Heartbeat:Connect(function(dt)
     if _G.Settings.UseTools then 
         equipTools()
         activateTools()
+    end
+
+    -- Anti-Lagback Interceptor Loop[cite: 4]
+    if _G.Settings.AntiLagback and root then
+        local vel = root.AssemblyLinearVelocity
+        if vel.Magnitude > 120 then
+            root.AssemblyLinearVelocity = vel.Unit * 30
+        end
     end
 
     if _G.Settings.ToolGrabber then
@@ -596,29 +687,84 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    if _G.Settings.KillAura and #getgenv().configs.TargetList > 0 then
-        pcall(function()
-            local validTargets = {}
-            for _, p in ipairs(getgenv().configs.TargetList) do
-                if p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then table.insert(validTargets, p.Character) end
+    -- Ultra Smart Hit Amplifier Integration Hook[cite: 7]
+    if _G.Settings.HitAmplifier then
+        local overlapParams = OverlapParams.new()
+        overlapParams.FilterType = Enum.RaycastFilterType.Blacklist
+        overlapParams.FilterDescendantsInstances = { char }
+        
+        local parts = workspace:GetPartBoundsInBox(CFrame.new(root.Position), Vector3.new(28, 28, 28), overlapParams)
+        for _, part in ipairs(parts) do
+            local model = part:FindFirstAncestorOfClass("Model")
+            if model then
+                local hum = model:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 and Players:GetPlayerFromCharacter(model) ~= LP then
+                    for _, tool in ipairs(char:GetChildren()) do
+                        if tool:IsA("Tool") then
+                            pcall(tool.Activate, tool)
+                            pcall(tool.Activate, tool)
+                        end
+                    end
+                    break
+                end
             end
-            local Ignorelist = OverlapParams.new() Ignorelist.FilterType = Enum.RaycastFilterType.Include Ignorelist.FilterDescendantsInstances = validTargets
+        end
+    end
 
-            for _, tool in ipairs(char:GetChildren()) do
-                if tool:IsA("Tool") then
-                    for _, obj in ipairs(tool:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then
-                            local touch = obj.Parent
-                            local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)
-                            for _, pPart in ipairs(parts) do
-                                if tool:IsDescendantOf(workspace) then firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0) end
-                            end
+    -- Integrated Custom Script Damage Matrix Loop[cite: 4]
+    if #getgenv().configs.TargetList > 0 then
+        local chars = GetCharacters()
+		Ignorelist.FilterDescendantsInstances = chars
+
+		for _, tool in ipairs(char:GetChildren()) do
+			if tool:IsA("Tool") then
+				local touch = GetTouchInterest(tool)
+				if touch then
+					ApplyDamageInstant(tool, touch)
+				end
+			end
+		end
+    end
+end)
+
+-- RenderStepped Loop: High Frame-Rate Target Proximity Trigger + God-Tier 2X Damage Injection Layer[cite: 4]
+RunService.RenderStepped:Connect(function()
+    if #getgenv().configs.TargetList == 0 then return end
+    local char = LP.Character
+    if not char then return end
+
+    local best
+    for _, plr in ipairs(getgenv().configs.TargetList) do
+        if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+            local hum = plr.Character.Humanoid
+            if hum.Health > 0 then
+                if not best or hum.Health < best.Humanoid.Health then
+                    best = { Humanoid = hum, Char = plr.Character }
+                end
+            end
+        end
+    end
+
+    if not best then return end
+
+    -- Determine how many simulation strike iterations to cycle per thread pass[cite: 4]
+    local multiStrikeLoops = _G.Settings.DoubleDamage and 4 or 1
+
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            local touch = GetTouchInterest(tool)
+            if touch then
+                for _ = 1, multiStrikeLoops do
+                    for _, part in ipairs(best.Char:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            firetouchinterest(touch, part, 1)
+                            firetouchinterest(touch, part, 0)
                         end
                     end
                 end
             end
-        end)
+        end
     end
 end)
 
-WindUI:Notify({ Title = "DEATH WATCHERS V8.3 FIXED", Content = "Target drop-downs synchronized and dynamic styles loaded.", Duration = 5 })
+WindUI:Notify({ Title = "DEATH WATCHERS OVERHAULED", Content = "Tool grabber loop completely fixed. God-tier damage configurations primed.", Duration = 5 })
