@@ -1,4 +1,4 @@
--- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (V8.3 GOD-TIER OVERHAUL)
+-- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (V8.3 VISUAL CORE RESTORED)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -374,7 +374,7 @@ local function startSpectating()
 end
 
 -- ==========================================================
--- 🎨 WINDUI DASHBOARD TABS CONFIGURATION
+-- 🎨 WINDUI DASHBOARD TABS CONFIGURATION (FIXED DECOUPLING)
 -- ==========================================================
 local CombatTab  = Window:Tab({ Title = "PvP Mods", Icon = "swords" })
 local GlitchTab  = Window:Tab({ Title = "Tycoon Glitch", Icon = "zap" })
@@ -385,70 +385,74 @@ local ServerTab  = Window:Tab({ Title = "Server Info", Icon = "server" })
 local InfoTab    = Window:Tab({ Title = "Identity", Icon = "user" })
 
 -- --- 1. PvP COMBAT MODS ---
-pcall(function()
-    CombatTab:Section({ Title = "⚡ Core Automation Engines" })
-    CombatTab:Toggle({ Title = "0 Cooldown Breaker", Value = false, Callback = function(v) _G.Settings.ZeroCooldown = v end })
-    CombatTab:Toggle({ Title = "RTX Instant Auto-Use Tools", Value = false, Callback = function(v) _G.Settings.UseTools = v if v then equipTools() end end })
-    CombatTab:Toggle({ Title = "Quantum Parallel Tool Grabber", Value = true, Callback = function(v) _G.Settings.ToolGrabber = v if v then triggerQuantumGrab() end end })
-    CombatTab:Toggle({ Title = "Pre-Death Instant Respawn Engine", Value = false, Callback = function(v) _G.Settings.Respawn = v end })
+task.spawn(function()
+    pcall(function()
+        CombatTab:Section({ Title = "⚡ Core Automation Engines" })
+        CombatTab:Toggle({ Title = "0 Cooldown Breaker", Value = false, Callback = function(v) _G.Settings.ZeroCooldown = v end })
+        CombatTab:Toggle({ Title = "RTX Instant Auto-Use Tools", Value = false, Callback = function(v) _G.Settings.UseTools = v if v then equipTools() end end })
+        CombatTab:Toggle({ Title = "Quantum Parallel Tool Grabber", Value = true, Callback = function(v) _G.Settings.ToolGrabber = v if v then triggerQuantumGrab() end end })
+        CombatTab:Toggle({ Title = "Pre-Death Instant Respawn Engine", Value = false, Callback = function(v) _G.Settings.Respawn = v end })
 
-    CombatTab:Section({ Title = "⚔️ Advanced Combat Multipliers" })
-    CombatTab:Toggle({
-        Title = "Optimized Hitbox Expander V2",
-        Value = false,
-        Callback = function(v) 
-            _G.Settings.HitboxExpander = v 
-            if not v then
-                for hrp, _ in pairs(modifiedHitboxes) do
+        CombatTab:Section({ Title = "⚔️ Advanced Combat Multipliers" })
+        CombatTab:Toggle({
+            Title = "Optimized Hitbox Expander V2",
+            Value = false,
+            Callback = function(v) 
+                _G.Settings.HitboxExpander = v 
+                if not v then
+                    for hrp, _ in pairs(modifiedHitboxes) do
+                        pcall(function()
+                            if hrp and hrp.Parent then
+                                hrp.Size = Vector3.new(2, 2, 2)
+                                hrp.Transparency = 0
+                                local vis = hrp:FindFirstChild("HitboxVisual") if vis then vis:Destroy() end
+                            end
+                        end)
+                    end
+                    table.clear(modifiedHitboxes)
+                end
+            end
+        })
+        CombatTab:Slider({ Title = "Hitbox Dimension Radius", Min = 2, Max = 30, Value = 12, Callback = function(v) _G.Settings.HitboxSize = v end })
+        CombatTab:Toggle({ Title = "Ultra Smart Hit Amplifier", Value = false, Callback = function(v) _G.Settings.HitAmplifier = v end })
+        CombatTab:Toggle({ Title = "God-Tier 2X Instant Damage Loop", Value = false, Callback = function(v) _G.Settings.DoubleDamage = v end })
+        CombatTab:Toggle({
+            Title = "Zero-Gravity Torso Tool Follow",
+            Value = false,
+            Callback = function(v) 
+                _G.Settings.ToolFollow = v 
+                if not v then
                     pcall(function()
-                        if hrp and hrp.Parent then
-                            hrp.Size = Vector3.new(2, 2, 2)
-                            hrp.Transparency = 0
-                            local vis = hrp:FindFirstChild("HitboxVisual") if vis then vis:Destroy() end
+                        for _, part in ipairs(cachedToolParts) do
+                            local bv = part:FindFirstChildOfClass("BodyVelocity")
+                            local bp = part:FindFirstChildOfClass("BodyPosition")
+                            if bv then bv:Destroy() end if bp then bp:Destroy() end
                         end
                     end)
                 end
-                table.clear(modifiedHitboxes)
             end
-        end
-    })
-    CombatTab:Slider({ Title = "Hitbox Dimension Radius", Min = 2, Max = 30, Value = 12, Callback = function(v) _G.Settings.HitboxSize = v end })
-    CombatTab:Toggle({ Title = "Ultra Smart Hit Amplifier", Value = false, Callback = function(v) _G.Settings.HitAmplifier = v end })
-    CombatTab:Toggle({ Title = "God-Tier 2X Instant Damage Loop", Value = false, Callback = function(v) _G.Settings.DoubleDamage = v end })
-    CombatTab:Toggle({
-        Title = "Zero-Gravity Torso Tool Follow",
-        Value = false,
-        Callback = function(v) 
-            _G.Settings.ToolFollow = v 
-            if not v then
-                pcall(function()
-                    for _, part in ipairs(cachedToolParts) do
-                        local bv = part:FindFirstChildOfClass("BodyVelocity")
-                        local bp = part:FindFirstChildOfClass("BodyPosition")
-                        if bv then bv:Destroy() end if bp then bp:Destroy() end
-                    end
-                end)
-            end
-        end
-    })
+        })
+    end)
 end)
 
 -- --- 2. TYCOON GLITCH ENVIRONMENT ---
-pcall(function()
-    GlitchTab:Section({ Title = "🌀 Server Rejoin Persistence Engine" })
-    GlitchTab:Button({
-        Title = "⚡ Super Fast Same-Server Rejoin",
-        Desc = "Force reconnects to this exact Server JobID to break tycoon unclaiming.",
-        Callback = function()
-            pcall(function()
-                WindUI:Notify({ Title = "Initiating Teleport", Content = "Locking into same instance network...", Duration = 3 })
-                task.wait(0.1)
-                if #Players:GetPlayers() <= 1 then TeleportService:Teleport(game.PlaceId, LP) else TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP) end
-            end)
-        end
-    })
-    GlitchTab:Section({ Title = "💡 How to Use the Tycoon Glitch" })
-    GlitchTab:Paragraph({ Title = "Execution Method:", Content = "1. Claim your first tycoon normally.\n2. Click 'Super Fast Same-Server Rejoin'.\n3. Because your character disconnects and re-authenticates inside milliseconds, the server cache delays clearing your old claim.\n4. When you land back in, quickly run to a second open tycoon and claim it!" })
+task.spawn(function()
+    pcall(function()
+        GlitchTab:Section({ Title = "🌀 Server Rejoin Persistence Engine" })
+        GlitchTab:Button({
+            Title = "⚡ Super Fast Same-Server Rejoin",
+            Desc = "Force reconnects to this exact Server JobID to break tycoon unclaiming.",
+            Callback = function()
+                pcall(function()
+                    WindUI:Notify({ Title = "Initiating Teleport", Content = "Locking into same instance network...", Duration = 3 })
+                    task.wait(0.1)
+                    if #Players:GetPlayers() <= 1 then TeleportService:Teleport(game.PlaceId, LP) else TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP) end
+                end)
+            end
+        })
+        GlitchTab:Section({ Title = "💡 How to Use the Tycoon Glitch" })
+        GlitchTab:Paragraph({ Title = "Execution Method:", Content = "1. Claim your first tycoon normally.\n2. Click 'Super Fast Same-Server Rejoin'.\n3. Because your character disconnects and re-authenticates inside milliseconds, the server cache delays clearing your old claim.\n4. When you land back in, quickly run to a second open tycoon and claim it!" })
+    end)
 end)
 
 -- --- 3. TARGETING SYSTEMS (V8.3 EXTENDED WITH REWRITTEN INSTANT DAMAGE EXECUTION)[cite: 3, 4] ---
@@ -491,117 +495,127 @@ local function populatePlayerTargetElements()
     end)
 end
 
-pcall(function()
-    TargetTab:Section({ Title = "⚔️ Combat Routing Triggers" })
-    TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
-    TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
-    TargetTab:Button({ Title = "🔄 Refresh Target Player List", Desc = "Forces manual layout rebuild and updates visibility tags", Callback = function() populatePlayerTargetElements() end })
-    
-    populatePlayerTargetElements()
-    Players.PlayerAdded:Connect(populatePlayerTargetElements)
-    Players.PlayerRemoving:Connect(populatePlayerTargetElements)
+task.spawn(function()
+    pcall(function()
+        TargetTab:Section({ Title = "⚔️ Combat Routing Triggers" })
+        TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
+        TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
+        TargetTab:Button({ Title = "🔄 Refresh Target Player List", Desc = "Forces manual layout rebuild and updates visibility tags", Callback = function() populatePlayerTargetElements() end })
+        
+        populatePlayerTargetElements()
+        Players.PlayerAdded:Connect(populatePlayerTargetElements)
+        Players.PlayerRemoving:Connect(populatePlayerTargetElements)
+    end)
 end)
 
 -- --- 4. SETTINGS SECTION (WITH LAGGING OVERRIDE ENGINES)[cite: 4] ---
-pcall(function()
-    SettingsTab:Section({ Title = "🎨 UI Theme Customization" })
-    
-    SettingsTab:Colorpicker({
-        Title = "Interface Core Accent Color",
-        Default = Color3.fromRGB(0, 132, 255),
-        Callback = function(color)
-            pcall(function() Window:SetThemeColor(color) end)
-        end
-    })
-
-    SettingsTab:Slider({
-        Title = "Dashboard Panel Opacity",
-        Min = 0,
-        Max = 100,
-        Value = 0,
-        Callback = function(value)
-            pcall(function()
-                local mainFrame = Window.Instance or Window.Frame
-                if mainFrame then mainFrame.BackgroundTransparency = (value / 100) end
-            end)
-        end
-    })
-
-    SettingsTab:Section({ Title = "📡 Network Stabilization Mechanics" })
-    SettingsTab:Toggle({
-        Title = "Anti-Ping Spike Matrix",
-        Value = false,
-        Callback = function(v)
-            _G.Settings.AntiPingSpike = v
-            if v then
-                settings().Network.IncomingReplicationLag = 0
-                pcall(function() settings().Network.DataSendRate = 60 end)
+task.spawn(function()
+    pcall(function()
+        SettingsTab:Section({ Title = "🎨 UI Theme Customization" })
+        
+        SettingsTab:Colorpicker({
+            Title = "Interface Core Accent Color",
+            Default = Color3.fromRGB(0, 132, 255),
+            Callback = function(color)
+                pcall(function() Window:SetThemeColor(color) end)
             end
-        end
-    })
-    SettingsTab:Toggle({
-        Title = "Velocity Anti-Lagback Engine[cite: 4]",
-        Value = false,
-        Callback = function(v)
-            _G.Settings.AntiLagback = v
-        end
-    })
+        })
 
-    SettingsTab:Section({ Title = "⚙️ Engine Performance Optimizations" })
-    SettingsTab:Toggle({
-        Title = "Working Anti-Lag Engine",
-        Value = false,
-        Callback = function(v)
-            if v then
-                settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("PostEffect") or obj:IsA("Explosion") or obj:IsA("Sparkles") then obj.Enabled = false
-                    elseif obj:IsA("BasePart") and not obj:IsDescendantOf(LP.Character) then obj.Material = Enum.Material.SmoothPlastic end
+        SettingsTab:Slider({
+            Title = "Dashboard Panel Opacity",
+            Min = 0,
+            Max = 100,
+            Value = 0,
+            Callback = function(value)
+                pcall(function()
+                    local mainFrame = Window.Instance or Window.Frame
+                    if mainFrame then mainFrame.BackgroundTransparency = (value / 100) end
+                end)
+            end
+        })
+
+        SettingsTab:Section({ Title = "📡 Network Stabilization Mechanics" })
+        SettingsTab:Toggle({
+            Title = "Anti-Ping Spike Matrix",
+            Value = false,
+            Callback = function(v)
+                _G.Settings.AntiPingSpike = v
+                if v then
+                    settings().Network.IncomingReplicationLag = 0
+                    pcall(function() settings().Network.DataSendRate = 60 end)
                 end
             end
-        end
-    })
+        })
+        SettingsTab:Toggle({
+            Title = "Velocity Anti-Lagback Engine[cite: 4]",
+            Value = false,
+            Callback = function(v)
+                _G.Settings.AntiLagback = v
+            end
+        })
 
-    SettingsTab:Slider({ Title = "Loopbring Distance Offset", Min = 0, Max = 20, Value = 3, Callback = function(v) _G.Settings.LoopbringDistance = v end })
+        SettingsTab:Section({ Title = "⚙️ Engine Performance Optimizations" })
+        SettingsTab:Toggle({
+            Title = "Working Anti-Lag Engine",
+            Value = false,
+            Callback = function(v)
+                if v then
+                    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if obj:IsA("PostEffect") or obj:IsA("Explosion") or obj:IsA("Sparkles") then obj.Enabled = false
+                        elseif obj:IsA("BasePart") and not obj:IsDescendantOf(LP.Character) then obj.Material = Enum.Material.SmoothPlastic end
+                    end
+                end
+            end
+        })
+
+        SettingsTab:Slider({ Title = "Loopbring Distance Offset", Min = 0, Max = 20, Value = 3, Callback = function(v) _G.Settings.LoopbringDistance = v end })
+    end)
 end)
 
 -- --- 5. DETAILED SERVER SECTION ---
 local PlayerCountCard, PingCard, FpsCard, ServerTimeCard
-pcall(function()
-    ServerTab:Section({ Title = "👁️ Overwatch Intelligence" })
-    ServerTab:Button({ Title = "Spy on Players (Spectator Mode)", Desc = "Deploys a bottom HUD to cycle cameras through active players.", Callback = function() startSpectating() end })
+task.spawn(function()
+    pcall(function()
+        ServerTab:Section({ Title = "👁️ Overwatch Intelligence" })
+        ServerTab:Button({ Title = "Spy on Players (Spectator Mode)", Desc = "Deploys a bottom HUD to cycle cameras through active players.", Callback = function() startSpectating() end })
 
-    ServerTab:Section({ Title = "🖥️ Live Environment Telemetry" })
-    PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching..." })
-    PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching..." })
-    FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching..." })
-    ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching..." })
+        ServerTab:Section({ Title = "🖥️ Live Environment Telemetry" })
+        PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching..." })
+        PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching..." })
+        FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching..." })
+        ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching..." })
 
-    task.spawn(function()
-        while task.wait(0.5) do
-            pcall(function()
-                if PlayerCountCard then PlayerCountCard:SetTitle("Active Roster: " .. #Players:GetPlayers() .. " / " .. Players.MaxPlayers) end
-                if PingCard then PingCard:SetTitle("Network Latency: " .. math.round(Stats.Network.ServerToClientPing:GetValue() * 1000) .. " ms") end
-                if FpsCard then FpsCard:SetTitle("Core Frame Rate: " .. math.round(1 / RunService.Heartbeat:Wait()) .. " FPS") end
-                if ServerTimeCard then
-                    local uptime = math.round(workspace.DistributedGameTime)
-                    ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", math.floor(uptime / 3600), math.floor((uptime % 3600) / 60), uptime % 60))
-                end
-            end)
-        end
+        task.spawn(function()
+            while task.wait(0.5) do
+                pcall(function()
+                    if PlayerCountCard then PlayerCountCard:SetTitle("Active Roster: " .. #Players:GetPlayers() .. " / " .. Players.MaxPlayers) end
+                    if PingCard then PingCard:SetTitle("Network Latency: " .. math.round(Stats.Network.ServerToClientPing:GetValue() * 1000) .. " ms") end
+                    if FpsCard then FpsCard:SetTitle("Core Frame Rate: " .. math.round(1 / RunService.Heartbeat:Wait()) .. " FPS") end
+                    if ServerTimeCard then
+                        local uptime = math.round(workspace.DistributedGameTime)
+                        ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", math.floor(uptime / 3600), math.floor((uptime % 3600) / 60), uptime % 60))
+                    end
+                end)
+            end
+        end)
     end)
 end)
 
 -- --- 6. ADMIN UTILITIES ---
-pcall(function()
-    AdminTab:Section({ Title = "🛠️ Operational Overrides" })
-    AdminTab:Button({ Title = "Load Nameless Admin Tools", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
+task.spawn(function()
+    pcall(function()
+        AdminTab:Section({ Title = "🛠️ Operational Overrides" })
+        AdminTab:Button({ Title = "Load Nameless Admin Tools", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
+    end)
 end)
 
 -- --- 7. IDENTITY PROFILE ---
-pcall(function()
-    InfoTab:Section({ Title = "👤 Local Client Signatures" })
-    InfoTab:Button({ Title = "Player Identity: " .. LP.Name, Callback = function() setclipboard(LP.Name) end })
+task.spawn(function()
+    pcall(function()
+        InfoTab:Section({ Title = "👤 Local Client Signatures" })
+        InfoTab:Button({ Title = "Player Identity: " .. LP.Name, Callback = function() setclipboard(LP.Name) end })
+    end)
 end)
 
 -- ==========================================================
@@ -767,4 +781,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-WindUI:Notify({ Title = "DEATH WATCHERS OVERHAULED", Content = "Tool grabber loop completely fixed. God-tier damage configurations primed.", Duration = 5 })
+WindUI:Notify({ Title = "DEATH WATCHERS CORE ONLINE", Content = "Multi-Matrix interface mounted smoothly.", Duration = 5 })
