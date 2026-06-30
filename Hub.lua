@@ -1,4 +1,4 @@
--- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.3 MODDED)
+-- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.3 RESTORED)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -25,12 +25,11 @@ local Window = WindUI:CreateWindow({
 _G.Settings = {
     UseTools = false, Respawn = false, ToolGrabber = true, Loopbring = false,
     KillAura = false, HitboxExpander = false, HitboxSize = 12, HitAmplifier = false,
-    ToolFollow = false, ZeroCooldown = false, LoopbringDistance = 3,
-    AntiLag = false, AntiPing = false
+    ToolFollow = false, ZeroCooldown = false, LoopbringDistance = 3
 }
 
 _G.BringTargets = {}
-getgenv().configs = { connections = {}, Size = Vector3.new(30, 30, 30) }
+getgenv().configs = { connections = {}, Size = Vector3.new(30, 30, 30), TargetList = {} }
 local modifiedHitboxes, cachedToolParts, cachedTargetTorsos = {}, {}, {}
 
 -- ⚡ DYNAMIC 0 COOLDOWN BREAKER HOOK ENGINE
@@ -43,94 +42,88 @@ pcall(function()
 end)
 
 -- ==========================================================
--- ⚡ PARALLEL COMBAT ASSISTANCE LOGIC METHODS
+-- ⚡ NEW TOOL GRABBER LOGIC ENGINE (NO DELAY)
 -- ==========================================================
-local Tycoons = workspace:WaitForChild("Tycoons", 5)
+local Tycoons = workspace:WaitForChild("Tycoons")
+local PAD_RANGE = 1000
+local TOUCH_BURST = 8 
 
--- Isolated explicitly to weapons from Screenshot_20260630-013938.jpg through Screenshot_20260630-014213.jpg
-local toolToBase = {
-    ["Axe"] = "Storm",          -- Storm Tycoon 1st Floor (Screenshot_20260630-013938.jpg / Screenshot_20260630-014009.jpg)
-    ["Fists"] = "Robotic",      -- Robotic Tycoon 1st Floor (Screenshot_20260630-014100.jpg / Screenshot_20260630-014109.jpg)
-    ["Energy Sword"] = "Stone", -- Stone Tycoon 1st Floor (Screenshot_20260630-014124.jpg / Screenshot_20260630-014132.jpg)
-    ["Staff"] = "Magic"         -- Magic Tycoon 1st Floor (Screenshot_20260630-014206.jpg / Screenshot_20260630-014213.jpg)
-}
+local allowedBases = {Stone=true, Magic=true, Storm=true, Robotic=true}
+local excludedBases = {Insanity=true, Giant=true, Dark=true, Spike=true, Web=true, Strong=true}
+local toolToBase = { ["Energy Sword"] = "Stone", ["Staff"] = "Magic", ["Axe"] = "Storm", ["Fist"] = "Robotic" }
 
-local padsByBase, activeLoops = {}, {}
+local padsByBase = {}
+local activeLoops = {}
 
 local function registerPad(pad)
-    local base = pad.Parent and pad.Parent.Parent
-    if not base or not toolToBase[pad.Parent.Name] or base.Name ~= toolToBase[pad.Parent.Name] then return end
-    padsByBase[base.Name] = padsByBase[base.Name] or {}
-    table.insert(padsByBase[base.Name], pad)
+	local base = pad.Parent and pad.Parent.Parent
+	if not base then return end
+	if excludedBases[base.Name] or not allowedBases[base.Name] then return end
+	padsByBase[base.Name] = padsByBase[base.Name] or {}
+	table.insert(padsByBase[base.Name], pad)
 end
 
-local function scanPads()
-    table.clear(padsByBase)
-    if Tycoons then
-        for _, d in ipairs(Tycoons:GetDescendants()) do
-            if d:IsA("TouchTransmitter") and d.Parent then
-                local weaponName = d.Parent.Name
-                -- Verify weapon matches name registry and target Tycoon structural parent strictly
-                if toolToBase[weaponName] and d.Parent.Parent and d.Parent.Parent.Parent and d.Parent.Parent.Parent.Name == toolToBase[weaponName] then
-                    padsByBase[toolToBase[weaponName]] = padsByBase[toolToBase[weaponName]] or {}
-                    table.insert(padsByBase[toolToBase[weaponName]], d)
-                end
-            end
-        end
-    end
+for _, d in ipairs(Tycoons:GetDescendants()) do
+	if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
+		registerPad(d.Parent)
+	end
 end
-scanPads()
+
+Tycoons.DescendantAdded:Connect(function(d)
+	if d:IsA("TouchTransmitter") and d.Parent and d.Parent.Parent and d.Parent.Parent.Name:find("GearGiver1") then
+		registerPad(d.Parent)
+	end
+end)
 
 local function hasSpecificTool(toolName)
-    local function scan(container)
-        if not container then return false end
-        for _, t in ipairs(container:GetChildren()) do if t:IsA("Tool") and t.Name == toolName then return true end end
-        return false
-    end
-    return scan(LP.Backpack) or scan(LP.Character)
+	local function scan(container)
+		if not container then return false end
+		for _, t in ipairs(container:GetChildren()) do if t:IsA("Tool") and t.Name == toolName then return true end end
+	end
+	return scan(LP.Backpack) or scan(LP.Character)
 end
 
-local function runParallelGrabLoop(toolName)
-    if activeLoops[toolName] then return end
-    local base = toolToBase[toolName]
-    if not base then return end
+local function getClosestPad(pads, root)
+	local closest, dist
+	for _, pad in ipairs(pads) do
+		local d = (pad.Position - root.Position).Magnitude
+		if d < PAD_RANGE and (not dist or d < dist) then dist = d closest = pad end
+	end
+	return closest
+end
 
-    activeLoops[toolName] = true
-    task.spawn(function()
-        while activeLoops[toolName] and _G.Settings.ToolGrabber do
-            if not hasSpecificTool(toolName) then
-                local char = LP.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                if root and padsByBase[base] then
-                    for _, pad in ipairs(padsByBase[base]) do
-                        if pad.Parent and pad.Parent:IsA("BasePart") then
-                            for i = 1, 3 do 
-                                firetouchinterest(root, pad.Parent, 0) 
-                                firetouchinterest(root, pad.Parent, 1) 
-                            end
-                        end
-                    end
-                end
-            end
-            task.wait(0.25)
-        end
-        activeLoops[toolName] = nil
-    end)
+local function startToolLoop(toolName)
+	if activeLoops[toolName] or not _G.Settings.ToolGrabber then return end
+	local base = toolToBase[toolName]
+	if not base then return end
+
+	activeLoops[toolName] = true
+	task.spawn(function()
+		while activeLoops[toolName] and _G.Settings.ToolGrabber do
+			if hasSpecificTool(toolName) then activeLoops[toolName] = nil break end
+			local char = LP.Character
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+			if not root then RunService.Heartbeat:Wait() continue end
+
+			local pads = padsByBase[base]
+			if pads then
+				local pad = getClosestPad(pads, root)
+				if pad then
+					for i = 1, TOUCH_BURST do
+						pcall(firetouchinterest, root, pad, 0)
+						pcall(firetouchinterest, root, pad, 1)
+					end
+				end
+			end
+			task.wait()
+		end
+		activeLoops[toolName] = nil
+	end)
 end
 
 local function triggerQuantumGrab()
-    if not _G.Settings.ToolGrabber then return end
-    scanPads()
-    for toolName in pairs(toolToBase) do runParallelGrabLoop(toolName) end
-end
-
-if Tycoons then
-    Tycoons.DescendantAdded:Connect(function(d)
-        if _G.Settings.ToolGrabber and d:IsA("TouchTransmitter") and d.Parent then
-            task.wait(0.1)
-            scanPads()
-        end
-    end)
+	if not _G.Settings.ToolGrabber then return end
+	for toolName in pairs(toolToBase) do startToolLoop(toolName) end
 end
 
 -- ==========================================================
@@ -162,7 +155,7 @@ local function fixToolPhysics(tool)
 end
 
 -- ==========================================================
--- ⚔️ INSTANT PERFORMANCE ATTACK ENGINE (DELAY REMOVED)
+-- ⚔️ HEADLESS RTX ULTRA USE TOOLS ENGINE (NO DELAY LOOP)
 -- ==========================================================
 local function equipTools()
     local char, bp = LP.Character, LP.Backpack
@@ -178,9 +171,7 @@ end
 local function activateTools()
     local char = LP.Character if not char then return end
     for _, t in ipairs(char:GetChildren()) do 
-        if t:IsA("Tool") then 
-            pcall(t.Activate, t) 
-        end 
+        if t:IsA("Tool") then pcall(t.Activate, t) end 
     end
 end
 
@@ -195,11 +186,7 @@ local function executeInstantRespawn()
     respawnFired = true
     local function fire() 
         pcall(function() 
-            if GuideEvent then 
-                GuideEvent:FireServer() 
-            else 
-                LP:LoadCharacter() 
-            end 
+            if GuideEvent then GuideEvent:FireServer() else LP:LoadCharacter() end 
         end) 
     end
     fire() task.delay(0.01, fire) task.delay(0.1, function() respawnFired = false end)
@@ -401,128 +388,122 @@ pcall(function()
     GlitchTab:Paragraph({ Title = "Execution Method:", Content = "1. Claim your first tycoon normally.\n2. Click 'Super Fast Same-Server Rejoin'.\n3. Because your character disconnects and re-authenticates inside milliseconds, the server cache delays clearing your old claim.\n4. When you land back in, quickly run to a second open tycoon and claim it!" })
 end)
 
--- --- 3. TARGETING SYSTEMS INTERFACE ---
-local currentDropdown = nil
-local function updateLoopbringDropdown()
-    if not currentDropdown then return end
-    local playerNames = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LP then table.insert(playerNames, p.Name) end
-    end
-    currentDropdown:SetOptions(playerNames)
+-- --- 3. TARGETING SYSTEMS (V8.3 EXACT RESTORATION) ---
+local activeButtonsMap = {}
+local function populatePlayerTargetElements()
+    pcall(function()
+        for playerInstance, buttonRef in pairs(activeButtonsMap) do
+            pcall(function() buttonRef:Destroy() end)
+        end
+        table.clear(activeButtonsMap)
+
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LP then
+                local isAuraTarget = table.find(getgenv().configs.TargetList, p) ~= nil
+                local isLoopTarget = _G.BringTargets[p.Name] ~= nil
+                
+                local statusText = "[ Neutral Status ]"
+                if isAuraTarget and isLoopTarget then statusText = "[ AURA + LOOPING ]"
+                elseif isAuraTarget then statusText = "[ AURA ACTIVE ]"
+                elseif isLoopTarget then statusText = "[ LOOP ACTIVE ]" end
+
+                local targetButton = TargetTab:Button({
+                    Title = p.DisplayName .. " (" .. statusText .. ")",
+                    Desc = "Toggle @" .. p.Name .. " inside the combat matrix",
+                    Callback = function()
+                        local auraIdx = table.find(getgenv().configs.TargetList, p)
+                        if auraIdx then
+                            table.remove(getgenv().configs.TargetList, auraIdx)
+                            _G.BringTargets[p.Name] = nil
+                        else
+                            table.insert(getgenv().configs.TargetList, p)
+                            _G.BringTargets[p.Name] = true
+                        end
+                        populatePlayerTargetElements()
+                    end
+                })
+                activeButtonsMap[p] = targetButton
+            end
+        end
+    end)
 end
 
 pcall(function()
-    TargetTab:Section({ Title = "⚔️ Global Combat Triggers" })
-    TargetTab:Toggle({ Title = "Normal Kill Aura (30ft Radius)", Value = false, Callback = function(v) _G.Settings.KillAura = v end })
-    
-    TargetTab:Section({ Title = "🌀 Teleportation Matrix" })
+    TargetTab:Section({ Title = "⚔️ Combat Routing Triggers" })
+    TargetTab:Toggle({ Title = "Targeted Kill Aura Network", Value = false, Callback = function(v) _G.Settings.KillAura = v end })
     TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
+    TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
+    TargetTab:Button({ Title = "🔄 Refresh Target Player List", Desc = "Forces manual layout rebuild and updates visibility tags", Callback = function() populatePlayerTargetElements() end })
     
-    local initialNames = {}
-    for _, p in ipairs(Players:GetPlayers()) do if p ~= LP then table.insert(initialNames, p.Name) end end
+    populatePlayerTargetElements()
+    Players.PlayerAdded:Connect(populatePlayerTargetElements)
+    Players.PlayerRemoving:Connect(populatePlayerTargetElements)
+end)
+
+-- --- 4. SETTINGS SECTION (WITH UI COLOR/OPACITY SLIDERS) ---
+pcall(function()
+    SettingsTab:Section({ Title = "🎨 UI Theme Customization" })
     
-    currentDropdown = TargetTab:Dropdown({
-        Title = "Select Loopbring Target",
-        Desc = "Instantly locks the player vector to loop teleport",
-        Options = initialNames,
-        Callback = function(selectedName)
-            table.clear(_G.BringTargets)
-            if selectedName and selectedName ~= "" then
-                _G.BringTargets[selectedName] = true
-                WindUI:Notify({ Title = "Loopbring Target Locked", Content = "Target assigned: " .. selectedName, Duration = 2 })
-            end
+    SettingsTab:Colorpicker({
+        Title = "Interface Core Accent Accent Color",
+        Default = Color3.fromRGB(0, 132, 255),
+        Callback = function(color)
+            pcall(function() Window:SetThemeColor(color) end)
         end
     })
 
-    Players.PlayerAdded:Connect(updateLoopbringDropdown)
-    Players.PlayerRemoving:Connect(updateLoopbringDropdown)
-end)
+    SettingsTab:Slider({
+        Title = "Dashboard Panel Opacity",
+        Min = 0,
+        Max = 100,
+        Value = 0,
+        Callback = function(value)
+            pcall(function()
+                local mainFrame = Window.Instance or Window.Frame
+                if mainFrame then mainFrame.BackgroundTransparency = (value / 100) end
+            end)
+        end
+    })
 
--- --- 4. SETTINGS SECTION ---
-pcall(function()
     SettingsTab:Section({ Title = "⚙️ Engine Performance Optimizations" })
-    
     SettingsTab:Toggle({
         Title = "Working Anti-Lag Engine",
         Value = false,
         Callback = function(v)
-            _G.Settings.AntiLag = v
             if v then
                 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
                 for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("PostEffect") or obj:IsA("Explosion") or obj:IsA("Sparkles") then
-                        obj.Enabled = false
-                    elseif obj:IsA("BasePart") and not obj:IsDescendantOf(LP.Character) then
-                        obj.Material = Enum.Material.SmoothPlastic
-                    end
+                    if obj:IsA("PostEffect") or obj:IsA("Explosion") or obj:IsA("Sparkles") then obj.Enabled = false
+                    elseif obj:IsA("BasePart") and not obj:IsDescendantOf(LP.Character) then obj.Material = Enum.Material.SmoothPlastic end
                 end
             end
         end
     })
-    
-    SettingsTab:Toggle({
-        Title = "Anti-Ping Spike Network Lock",
-        Value = false,
-        Callback = function(v)
-            _G.Settings.AntiPing = v
-            if v then
-                if workspace:FindFirstChild("Terrain") then workspace.Terrain:Clear() end
-                pcall(function()
-                    game:GetService("Lighting").GlobalShadows = false
-                    game:GetService("Lighting").FogEnd = 9e9
-                end)
-            end
-        end
-    })
 
-    SettingsTab:Section({ Title = "📏 Vector Distance Configs" })
-    SettingsTab:Slider({
-        Title = "Loopbring Target Offset Distance",
-        Min = 0,
-        Max = 20,
-        Value = 3,
-        Callback = function(v) _G.Settings.LoopbringDistance = v end
-    })
+    SettingsTab:Slider({ Title = "Loopbring Distance Offset", Min = 0, Max = 20, Value = 3, Callback = function(v) _G.Settings.LoopbringDistance = v end })
 end)
 
 -- --- 5. DETAILED SERVER SECTION ---
 local PlayerCountCard, PingCard, FpsCard, ServerTimeCard
 pcall(function()
     ServerTab:Section({ Title = "👁️ Overwatch Intelligence" })
-    ServerTab:Button({
-        Title = "Spy on Players (Spectator Mode)",
-        Desc = "Deploys a bottom HUD to cycle cameras through active players.",
-        Callback = function() startSpectating() end
-    })
+    ServerTab:Button({ Title = "Spy on Players (Spectator Mode)", Desc = "Deploys a bottom HUD to cycle cameras through active players.", Callback = function() startSpectating() end })
 
     ServerTab:Section({ Title = "🖥️ Live Environment Telemetry" })
-    PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching...", Desc = "Total players currently connected" })
-    PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching...", Desc = "Real-time client response ping" })
-    FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching...", Desc = "Render performance speed" })
-    ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching...", Desc = "Elapsed time since instance startup" })
-
-    ServerTab:Section({ Title = "Bases & Instances" })
-    ServerTab:Button({ Title = "Copy Server Job Identification ID", Desc = "Click to save game.JobId to local clipboard", Callback = function() setclipboard(game.JobId) end })
+    PlayerCountCard = ServerTab:Button({ Title = "Active Roster: Fetching..." })
+    PingCard        = ServerTab:Button({ Title = "Network Latency: Fetching..." })
+    FpsCard         = ServerTab:Button({ Title = "Core Frame Rate: Fetching..." })
+    ServerTimeCard  = ServerTab:Button({ Title = "Server Runtime: Fetching..." })
 
     task.spawn(function()
         while task.wait(0.5) do
             pcall(function()
                 if PlayerCountCard then PlayerCountCard:SetTitle("Active Roster: " .. #Players:GetPlayers() .. " / " .. Players.MaxPlayers) end
-                if PingCard then
-                    local ping = math.round(Stats.Network.ServerToClientPing:GetValue() * 1000)
-                    PingCard:SetTitle("Network Latency: " .. ping .. " ms")
-                end
-                if FpsCard then
-                    local fps = math.round(1 / RunService.Heartbeat:Wait())
-                    FpsCard:SetTitle("Core Frame Rate: " .. fps .. " FPS")
-                end
+                if PingCard then PingCard:SetTitle("Network Latency: " .. math.round(Stats.Network.ServerToClientPing:GetValue() * 1000) .. " ms") end
+                if FpsCard then FpsCard:SetTitle("Core Frame Rate: " .. math.round(1 / RunService.Heartbeat:Wait()) .. " FPS") end
                 if ServerTimeCard then
                     local uptime = math.round(workspace.DistributedGameTime)
-                    local hours = math.floor(uptime / 3600)
-                    local minutes = math.floor((uptime % 3600) / 60)
-                    local seconds = uptime % 60
-                    ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", hours, minutes, seconds))
+                    ServerTimeCard:SetTitle(string.format("Server Runtime: %02dh : %02dm : %02ds", math.floor(uptime / 3600), math.floor((uptime % 3600) / 60), uptime % 60))
                 end
             end)
         end
@@ -532,19 +513,19 @@ end)
 -- --- 6. ADMIN UTILITIES ---
 pcall(function()
     AdminTab:Section({ Title = "🛠️ Operational Overrides" })
-    AdminTab:Button({ Title = "Load Nameless Admin Tools", Desc = "Executes the universal high-privilege administrative script environment", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
+    AdminTab:Button({ Title = "Load Nameless Admin Tools", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Nameless-admin-v250-script-87765"))() end })
 end)
 
 -- --- 7. IDENTITY PROFILE ---
 pcall(function()
     InfoTab:Section({ Title = "👤 Local Client Signatures" })
-    InfoTab:Button({ Title = "Player Identity: " .. LP.Name, Desc = "Click to copy username to clipboard", Callback = function() setclipboard(LP.Name) end })
-    InfoTab:Button({ Title = "Network Account ID: " .. LP.UserId, Desc = "Click to copy user identification number", Callback = function() setclipboard(tostring(LP.UserId)) end })
+    InfoTab:Button({ Title = "Player Identity: " .. LP.Name, Callback = function() setclipboard(LP.Name) end })
 end)
 
 -- ==========================================================
 -- 🚀 HIGH-VELOCITY CORE RUNTIME SYNCHRONIZATION
 -- ==========================================================
+local SpawnDeltWith = false
 local function runInstantSpawnSetup(char)
     if not char then return end
     pcall(function()
@@ -553,37 +534,35 @@ local function runInstantSpawnSetup(char)
         updateToolCache()
         
         for _, t in ipairs(char:GetChildren()) do if t:IsA("Tool") then fixToolPhysics(t) end end
-        char.ChildAdded:Connect(function(c)
-            if c:IsA("Tool") then task.wait() updateToolCache() fixToolPhysics(c) end
-        end)
+        char.ChildAdded:Connect(function(c) if c:IsA("Tool") then task.wait() updateToolCache() fixToolPhysics(c) end end)
         
-        if _G.Settings.ToolGrabber then triggerQuantumGrab() end
+        if _G.Settings.ToolGrabber and not SpawnDeltWith then
+            SpawnDeltWith = true
+            triggerQuantumGrab()
+        end
     end)
 end
 
-LP.CharacterAdded:Connect(runInstantSpawnSetup)
+LP.CharacterAdded:Connect(function(char) SpawnDeltWith = false runInstantSpawnSetup(char) end)
 if LP.Character then runInstantSpawnSetup(LP.Character) end
 
--- Persistent Character State Enforcement Loop
+-- Runtime Main Frame Execution Loop
 RunService.Heartbeat:Connect(function(dt)
     local char = LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not char or not root then return end
 
-    -- Raw zero-delay weapon activation engine to beat spawn killers instantly
     if _G.Settings.UseTools then 
         equipTools()
         activateTools()
     end
 
-    -- Persistent verification scanning loop for missing weapons
     if _G.Settings.ToolGrabber then
         for toolName in pairs(toolToBase) do
-            if not hasSpecificTool(toolName) then runParallelGrabLoop(toolName) end
+            if not hasSpecificTool(toolName) then startToolLoop(toolName) end
         end
     end
 
-    -- Hitbox Expander
     if _G.Settings.HitboxExpander then
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LP and p.Character then
@@ -603,7 +582,6 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    -- Loopbring Target Vector Execution Engine
     if _G.Settings.Loopbring then
         for targetName, enabled in pairs(_G.BringTargets) do
             if enabled then
@@ -618,36 +596,22 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    -- Normal Radius-Based Kill Aura Matrix (Auto targets everyone inside a 30ft radius)
-    if _G.Settings.KillAura then
+    if _G.Settings.KillAura and #getgenv().configs.TargetList > 0 then
         pcall(function()
             local validTargets = {}
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LP and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                    local pRoot = p.Character:FindFirstChild("HumanoidRootPart")
-                    if pRoot and (pRoot.Position - root.Position).Magnitude <= 30 then
-                        table.insert(validTargets, p.Character)
-                    end
-                end
+            for _, p in ipairs(getgenv().configs.TargetList) do
+                if p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then table.insert(validTargets, p.Character) end
             end
+            local Ignorelist = OverlapParams.new() Ignorelist.FilterType = Enum.RaycastFilterType.Include Ignorelist.FilterDescendantsInstances = validTargets
 
-            if #validTargets > 0 then
-                local Ignorelist = OverlapParams.new() 
-                Ignorelist.FilterType = Enum.RaycastFilterType.Include 
-                Ignorelist.FilterDescendantsInstances = validTargets
-
-                for _, tool in ipairs(char:GetChildren()) do
-                    if tool:IsA("Tool") then
-                        for _, obj in ipairs(tool:GetDescendants()) do
-                            if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then
-                                local touch = obj.Parent
-                                local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)
-                                for _, pPart in ipairs(parts) do
-                                    if tool:IsDescendantOf(workspace) then 
-                                        firetouchinterest(touch, pPart, 1) 
-                                        firetouchinterest(touch, pPart, 0) 
-                                    end
-                                end
+            for _, tool in ipairs(char:GetChildren()) do
+                if tool:IsA("Tool") then
+                    for _, obj in ipairs(tool:GetDescendants()) do
+                        if obj:IsA("TouchTransmitter") and obj.Parent:IsA("BasePart") then
+                            local touch = obj.Parent
+                            local parts = workspace:GetPartBoundsInBox(touch.CFrame, touch.Size + getgenv().configs.Size, Ignorelist)
+                            for _, pPart in ipairs(parts) do
+                                if tool:IsDescendantOf(workspace) then firetouchinterest(touch, pPart, 1) firetouchinterest(touch, pPart, 0) end
                             end
                         end
                     end
@@ -657,4 +621,4 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
 
-WindUI:Notify({ Title = "DEATH WATCHERS V8.3 MODDED", Content = "Asynchronous matrix configurations completely finalized.", Duration = 5 })
+WindUI:Notify({ Title = "DEATH WATCHERS V8.3 FIXED", Content = "Target drop-downs synchronized and dynamic styles loaded.", Duration = 5 })
