@@ -1,4 +1,4 @@
--- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.1)
+-- // DEATH WATCHERS | ULTIMATE PVP MATRIX ENGINE (WINDUI PRODUCTION V8.2)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -393,19 +393,17 @@ InfoTab:Button({ Title = "Network Account ID: " .. LP.UserId, Desc = "Click to c
 TargetTab:Section({ Title = "⚔️ Combat Routing Triggers" })
 TargetTab:Toggle({ Title = "Targeted Kill Aura Network", Value = false, Callback = function(v) _G.Settings.KillAura = v end })
 TargetTab:Toggle({ Title = "Loopbring Target Vector", Value = false, Callback = function(v) _G.Settings.Loopbring = v end })
-TargetTab:Section({ Title = "🎯 Active Network Roster Selector" })
+TargetTab:Section({ Title = "🎯 Active Network Roster" })
 
-local pageScrollingContainer = nil
-for _, instance in pairs(TargetTab) do
-    if typeof(instance) == "Instance" and instance:IsA("ScrollingFrame") then pageScrollingContainer = instance break end
-end
+-- Dynamic UI Cache to track button instances safely without messing with framework internals
+local playerButtonsMap = {}
 
 local function populatePlayerTargetElements()
-    if pageScrollingContainer then
-        for _, child in ipairs(pageScrollingContainer:GetChildren()) do
-            if child.Name:find("DWTarget_") then child:Destroy() end
-        end
+    -- Clear out old mapped entries securely
+    for name, buttonInstance in pairs(playerButtonsMap) do
+        pcall(function() buttonInstance:Destroy() end)
     end
+    table.clear(playerButtonsMap)
 
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LP then
@@ -417,9 +415,9 @@ local function populatePlayerTargetElements()
             elseif isAuraTarget then statusText = "[ AURA ACTIVE ]"
             elseif isLoopTarget then statusText = "[ LOOP ACTIVE ]" end
 
-            TargetTab:Button({
-                Title = p.DisplayName .. " (@" .. p.Name .. ") " .. statusText,
-                Desc = "Click to toggle this player inside global kill matrix networks.",
+            local b = TargetTab:Button({
+                Title = p.DisplayName .. " (" .. statusText .. ")",
+                Desc = "Toggle @" .. p.Name .. " inside global matrix tracking networks.",
                 Callback = function()
                     local auraIdx = table.find(getgenv().configs.TargetList, p)
                     if auraIdx then
@@ -434,14 +432,7 @@ local function populatePlayerTargetElements()
                     populatePlayerTargetElements()
                 end
             })
-
-            if pageScrollingContainer then
-                local elements = pageScrollingContainer:GetChildren()
-                local newestFrame = elements[#elements]
-                if newestFrame and newestFrame:IsA("Frame") and newestFrame.Name == "Frame" then
-                    newestFrame.Name = "DWTarget_" .. p.Name
-                end
-            end
+            playerButtonsMap[p.Name] = b
         end
     end
 end
